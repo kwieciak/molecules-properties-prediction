@@ -1,0 +1,2 @@
+pyparsing==3.2.0
+torch-geometric==2.6.1
