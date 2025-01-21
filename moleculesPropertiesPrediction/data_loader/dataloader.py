@@ -2,16 +2,17 @@ from torch_geometric.datasets import QM9
 from torch_geometric.loader import DataLoader
 
 
-def load_dataset(batch_size):
+def load_dataset(batch_size, train_ratio, val_ratio, test_ratio):
     dataset_path = "./data"
     qm9 = QM9(root=dataset_path)
 
-    # qm9 = qm9.shuffle()
+    # shuffling data
+    qm9 = qm9.shuffle()
 
     # splitting the data
-    train_index = int(len(qm9.data.y) * 0.7)
-    val_index = train_index + int(len(qm9.data.y) * 0.1)
-    test_index = val_index + int(len(qm9.data.y) * 0.2)
+    train_index = int(len(qm9) * train_ratio)
+    val_index = train_index + int(len(qm9) * val_ratio)
+    test_index = val_index + int(len(qm9) * test_ratio)
 
     # normalizing the data
     data_mean = qm9.data.y[0:train_index].mean()
