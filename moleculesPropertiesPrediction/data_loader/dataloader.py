@@ -1,10 +1,18 @@
+import pandas as pd
+import torch
 from torch_geometric.datasets import QM9
 from torch_geometric.loader import DataLoader
 
+qm9 = QM9
+print(qm9.num_features)
 
 def load_dataset(batch_size, train_ratio, val_ratio, test_ratio):
     dataset_path = "./data"
     qm9 = QM9(root=dataset_path)
+
+    #choosing one regression target
+    y_target = pd.DataFrame(qm9.data.y.numpy())
+    qm9.data.y = torch.Tensor(y_target[0])
 
     # shuffling data
     qm9 = qm9.shuffle()
