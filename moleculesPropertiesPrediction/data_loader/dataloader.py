@@ -3,12 +3,12 @@ import torch
 from torch_geometric.datasets import QM9
 from torch_geometric.loader import DataLoader
 
-qm9 = QM9
-print(qm9.num_features)
 
 def load_dataset(batch_size, train_ratio, val_ratio, test_ratio):
     dataset_path = "./data"
     qm9 = QM9(root=dataset_path)
+
+    print(qm9.edge_attr)
 
     #choosing one regression target
     y_target = pd.DataFrame(qm9.data.y.numpy())
@@ -18,9 +18,9 @@ def load_dataset(batch_size, train_ratio, val_ratio, test_ratio):
     qm9 = qm9.shuffle()
 
     # splitting the data
-    train_index = int(len(qm9) * train_ratio)
-    val_index = train_index + int(len(qm9) * val_ratio)
-    test_index = val_index + int(len(qm9) * test_ratio)
+    train_index = int(int(0.3 * len(qm9)) * train_ratio )
+    val_index = train_index + int(int(0.3 * len(qm9)) * val_ratio)
+    test_index = val_index + int(int(0.3 * len(qm9)) * test_ratio)
 
     # normalizing the data
     data_mean = qm9.data.y[0:train_index].mean()

@@ -49,8 +49,8 @@ def train_epochs(epochs, model, train_loader, val_loader, path):
         train_loss[epoch] = epoch_loss.detach().numpy()
         val_loss[epoch] = v_loss.detach().numpy()
 
-        # print current train and val loss
-        if epoch % 2 == 0:
+
+        if epoch % 5 == 0:
             print("Epoch: " + str(epoch)
                 + ", Train loss: " + str(epoch_loss.item())
                 + ", Val loss: " + str(v_loss.item())
