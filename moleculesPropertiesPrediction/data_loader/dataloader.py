@@ -8,7 +8,6 @@ def load_dataset(batch_size, train_ratio, val_ratio, test_ratio):
     dataset_path = "./data"
     qm9 = QM9(root=dataset_path)
 
-    print(qm9.edge_attr)
 
     #choosing one regression target
     y_target = pd.DataFrame(qm9.data.y.numpy())
