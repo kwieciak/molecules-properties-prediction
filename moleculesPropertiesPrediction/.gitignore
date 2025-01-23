@@ -3,6 +3,7 @@ data
 .data
 data/
 data/*
+moleculesPropertiesPrediction/data/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
