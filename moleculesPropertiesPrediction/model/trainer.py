@@ -50,7 +50,7 @@ def train_epochs(epochs, model, train_loader, val_loader, path):
         val_loss[epoch] = v_loss.detach().numpy()
 
 
-        if epoch % 5 == 0:
+        if epoch % 1 == 0:
             print("Epoch: " + str(epoch)
                 + ", Train loss: " + str(epoch_loss.item())
                 + ", Val loss: " + str(v_loss.item())
