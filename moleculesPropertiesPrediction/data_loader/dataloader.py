@@ -28,7 +28,7 @@ def load_dataset(batch_size, train_ratio, val_ratio, test_ratio):
 
     # putting datasets into dataloaders
     train_loader = DataLoader(qm9[0:train_index], batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(qm9[train_index:val_index], batch_size=batch_size, shuffle=True)
-    test_loader = DataLoader(qm9[val_index:test_index], batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(qm9[train_index:val_index], batch_size=batch_size, shuffle=False)
+    test_loader = DataLoader(qm9[val_index:test_index], batch_size=batch_size, shuffle=False)
 
     return train_loader, val_loader, test_loader

@@ -1,6 +1,4 @@
-torch
-torchvision
-torchaudio
+#do not add here torch, torchvision and torchaudio because it causes the installation of libraries incompatible with rocm
 torch-scatter
 torch-sparse
 torch-cluster
