@@ -80,7 +80,6 @@ class Gatv2CN(torch.nn.Module):
 class GIN(torch.nn.Module):
     def __init__(self, in_channels, hidden_channels, out_channels=1):
         super().__init__()
-        # Definicja warstw GINConv z silnie nieliniową funkcją
         self.conv1 = GINConv(
             Sequential(
                 Linear(in_channels, hidden_channels),
