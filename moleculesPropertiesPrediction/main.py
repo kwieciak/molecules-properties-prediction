@@ -9,16 +9,17 @@ warnings.filterwarnings("ignore")
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def main():
-    print(device)
-    print("test drugi build")
-    # epochs = 50
-    # train_loader24, val_loader24, test_loader24 = dataloader.load_dataset(24,0.7,0.1,0.2)
-    # train_loader32, val_loader32, test_loader32 = dataloader.load_dataset(16,0.7,0.1,0.2)
-    # modelGCN = GNN.GCN(64, 11)
-    # modelTransformCN = GNN.TransformerCN(11, 64)
-    # modelGATv2CN = GNN.Gatv2CN(11, 64)
-    # modelGIN = GNN.GIN(11, 64)
-    #
+    epochs = 50
+    train_loader8, val_loader8, test_loader8 = dataloader.load_dataset(8,0.7,0.1,0.2,0.3)
+    train_loader16, val_loader16, test_loader16 = dataloader.load_dataset(16,0.7,0.1,0.2,0.3)
+    train_loader24, val_loader24, test_loader24 = dataloader.load_dataset(24,0.7,0.1,0.2,0.3)
+    train_loader32, val_loader32, test_loader32 = dataloader.load_dataset(32,0.7,0.1,0.2,0.3)
+    modelGCN = GNN.GCN(11, 64)
+    modelGIN = GNN.GIN(11, 64)
+    modelTransformCN = GNN.TransformerCN(11, 64)
+    modelGATv2CN = GNN.Gatv2CN(11, 64)
+
+
     # print()
     # print('Dla batch = 24')
     # start1 = time.time()

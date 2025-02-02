@@ -5,12 +5,12 @@ import torch.nn.functional as Fun
 
 
 class GCN(torch.nn.Module):
-    def __init__(self, dim_h,qm9_num_features, targets_num=1):
+    def __init__(self, in_channels, hidden_channels, out_channels=1):
         super().__init__()
-        self.conv1 = GCNConv(qm9_num_features, dim_h)
-        self.conv2 = GCNConv(dim_h, dim_h)
-        self.conv3 = GCNConv(dim_h, dim_h)
-        self.lin = torch.nn.Linear(dim_h, targets_num)
+        self.conv1 = GCNConv(in_channels, hidden_channels)
+        self.conv2 = GCNConv(hidden_channels, hidden_channels)
+        self.conv3 = GCNConv(hidden_channels, hidden_channels)
+        self.lin = torch.nn.Linear(hidden_channels, out_channels)
 
     def forward(self, data):
         x, e = data.x, data.edge_index
