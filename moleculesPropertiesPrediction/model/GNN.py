@@ -13,13 +13,13 @@ class GCN(torch.nn.Module):
         self.lin = torch.nn.Linear(hidden_channels, out_channels)
 
     def forward(self, data):
-        x, e = data.x, data.edge_index
+        x, edge_index = data.x, data.edge_index
 
-        x = self.conv1(x, e)
+        x = self.conv1(x, edge_index)
         x = x.relu()
-        x = self.conv2(x, e)
+        x = self.conv2(x, edge_index)
         x = x.relu()
-        x = self.conv3(x, e)
+        x = self.conv3(x, edge_index)
 
         x = global_mean_pool(x, data.batch)
         x = Fun.dropout(x, p=0.5, training=self.training)

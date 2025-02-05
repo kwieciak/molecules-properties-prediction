@@ -5,14 +5,8 @@ __pycache__/
 .idea/
 .vscode/
 env/
-data/
-data
-./data
-.data
-data/*
 .venv
 .venv/
 venv
 venv/
-saved_models
 saved_models/
