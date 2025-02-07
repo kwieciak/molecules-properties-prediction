@@ -55,7 +55,7 @@ def train_epochs(epochs, model, train_loader, val_loader, path, device):
         val_loss[epoch] = v_loss.detach().cpu().numpy()
 
 
-        if epoch % 1 == 0:
+        if epoch % 5 == 0:
             print("Epoch: " + str(epoch)
                 + ", Train loss: " + str(epoch_loss.item())
                 + ", Val loss: " + str(v_loss.item())
@@ -64,7 +64,7 @@ def train_epochs(epochs, model, train_loader, val_loader, path, device):
             utils.print_memory_usage()
 
 
-        torch.cuda.empty_cache()
-        torch.cuda.ipc_collect()
+        #torch.cuda.empty_cache()
+        #torch.cuda.ipc_collect()
 
     return train_loss, val_loss, train_target, train_y_target
