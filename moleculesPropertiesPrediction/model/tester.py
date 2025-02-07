@@ -1,29 +1,32 @@
 import numpy as np
 import torch
 
-def eval_gnn(loader, model, loss):
+@torch.no_grad()
+def eval_gnn(loader, model, loss, device):
     #swittching into eval mode
     model.eval()
 
     val_loss = 0
     for graph in loader:
+        graph = graph.to(device)
         out = model(graph)
-        l = loss(out, torch.reshape(graph.y, (len(graph.y), 1)))
+        l = loss(out, torch.reshape(graph.y.to(device), (len(graph.y), 1)))
         val_loss += l / len(loader)
     return val_loss
 
 @torch.no_grad()
-def test_gnn(loader, model, loss):
+def test_gnn(loader, model, loss, device):
     loss = torch.nn.MSELoss()
     test_loss = 0
     test_target = np.empty(0)
     test_y_target = np.empty(0)
     for graph in loader:
+        graph = graph.to(device)
         out = model(graph)
-        l = loss(out, torch.reshape(graph.y, (len(graph.y), 1)))
+        l = loss(out, torch.reshape(graph.y.to(device), (len(graph.y), 1)))
         test_loss += l / len(loader)
 
-        test_target = np.concatenate((test_target, out.detach().numpy()[:, 0]))
-        test_y_target = np.concatenate((test_y_target, graph.y.detach().numpy()))
+        test_target = np.concatenate((test_target, out.detach().cpu().numpy()[:, 0]))
+        test_y_target = np.concatenate((test_y_target, graph.y.detach().cpu().numpy()))
 
     return test_loss, test_target, test_y_target

@@ -3,7 +3,7 @@ FROM rocm/pytorch:latest
 #to avoid interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
 
-#kep all base settings and do not remove ROCm/PyTorch dependencies
+#keep all base settings and do not remove ROCm/PyTorch dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-pip \
     && apt-get clean \
