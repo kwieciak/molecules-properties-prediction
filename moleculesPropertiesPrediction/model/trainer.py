@@ -58,11 +58,14 @@ def train_epochs(epochs, model, train_loader, val_loader, path, device):
     for epoch in range(epochs):
         epoch_loss, model = train_gnn(train_loader, model, loss, optimizer, device)
         v_loss = eval_gnn(val_loader, model, loss, device)
-        # if early_stopper.early_stop(v_loss):
-        #     print("Early stopping")
-        #     break
+
+        if early_stopper.early_stop(v_loss):
+            print("Early stopping")
+            break
+
         if v_loss < best_loss:
             torch.save(model.state_dict(), path)
+            
         for graph in train_loader:
             graph = graph.to(device)
             out = model(graph)
@@ -81,9 +84,7 @@ def train_epochs(epochs, model, train_loader, val_loader, path, device):
                   )
             # utils.print_gpu_memory()
             # utils.print_memory_usage()
-        if early_stopper.early_stop(v_loss):
-            print("Early stopping")
-            break
+
         # these functions should not be called explicitly
         # torch.cuda.empty_cache()
         # torch.cuda.ipc_collect()
