@@ -22,6 +22,21 @@ def load_dataset(batch_size, train_ratio, val_ratio, test_ratio, target_indices,
     num_samples = int(len(dataset) * dataset_usage_ratio)
     indices = list(range(num_samples))
 
+    # attaching task_index
+    # num_tasks = len(target_indices)
+    # samples_per_task = num_samples // num_tasks
+    # new_dataset = []
+    #
+    # for i in range(num_samples):
+    #     task_index = (i // samples_per_task) % num_tasks
+    #
+    #     data = dataset[i]
+    #     data.task_index = torch.tensor([task_index + 1], dtype=torch.long)
+    #
+    #     new_dataset.append(data)
+    #
+    # dataset=new_dataset
+
     train_index, temp_index = train_test_split(indices, test_size=(1.0 - train_ratio), random_state=42)
     val_index, test_index = train_test_split(temp_index, test_size=test_ratio / (val_ratio + test_ratio),
                                              random_state=42)

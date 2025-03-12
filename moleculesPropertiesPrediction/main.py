@@ -22,7 +22,7 @@ def main():
     # modelGIN = GNN.GIN(11, 64).to(device)
     # modelGIN1 = GNN.GIN(11, 64).to(device)
     # modelGIN2 = GNN.GIN(11, 64).to(device)
-    modelGIN3 = GNN.GIN(11, 64).to(device)
+    modelGIN3 = GNN.GIN(11, 64, 19).to(device)
     # modelTransformCN = GNN.TransformerCN(11, 64).to(device)
     # modelTransformCN1 = GNN.TransformerCN(11, 64).to(device)
     # modelTransformCN2 = GNN.TransformerCN(11, 64).to(device)
