@@ -1,7 +1,7 @@
 import warnings
 import torch
 from data_loader import dataloader
-from model import GNN, trainer, tester
+from model import GNNwithMTL, trainer, tester
 import time
 
 warnings.filterwarnings("ignore")
@@ -14,7 +14,13 @@ def main():
     #train_loader8, val_loader8, test_loader8 = dataloader.load_dataset(8,0.7,0.1,0.2,0.3)
     #train_loader16, val_loader16, test_loader16 = dataloader.load_dataset(16,0.7,0.1,0.2,0.3)
     #train_loader24, val_loader24, test_loader24 = dataloader.load_dataset(24,0.7,0.1,0.2,0.3)
-    train_loader32, val_loader32, test_loader32 = dataloader.load_dataset(32,0.7,0.1,0.2,[0,3], device,0.001)
+    train_loader32, val_loader32, test_loader32, task_indices = dataloader.load_dataset(32,0.7,0.1,0.2,[0,3], device,0.001)
+    print(task_indices)
+    print(len(train_loader32))
+    for batch in train_loader32:
+        print(len(batch))
+        print(batch.idx)
+        print(batch[0].idx)
     # modelGCN = GNN.GCN(11, 64).to(device)
     # modelGCN1 = GNN.GCN(11, 64).to(device)
     # modelGCN2 = GNN.GCN(11, 64).to(device)
@@ -22,7 +28,7 @@ def main():
     # modelGIN = GNN.GIN(11, 64).to(device)
     # modelGIN1 = GNN.GIN(11, 64).to(device)
     # modelGIN2 = GNN.GIN(11, 64).to(device)
-    modelGIN3 = GNN.GIN(11, 64, 19).to(device)
+    modelGIN3 = GNNwithMTL.GIN(11, 64, 19).to(device)
     # modelTransformCN = GNN.TransformerCN(11, 64).to(device)
     # modelTransformCN1 = GNN.TransformerCN(11, 64).to(device)
     # modelTransformCN2 = GNN.TransformerCN(11, 64).to(device)
@@ -109,7 +115,7 @@ def main():
     gin_train_loss32, gin_val_loss32, gin_train_target32, gin_train_y_target32 = trainer.train_epochs(epochs, modelGIN3,
                                                                                                       train_loader32,
                                                                                                       val_loader32,
-                                                                                                      "GIN_model32.pt",device)
+                                                                                                      "GIN_model32.pt",device, task_indices)
     end44 = time.time()
     print('Time = ', end44 - start44)
 

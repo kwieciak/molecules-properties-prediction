@@ -37,6 +37,14 @@ def load_dataset(batch_size, train_ratio, val_ratio, test_ratio, target_indices,
     #
     # dataset=new_dataset
 
+    num_tasks = len(target_indices)
+    samples_per_task = num_samples // num_tasks
+    task_indices = []
+
+    for i in range(num_samples):
+        task_index = (i//samples_per_task) % num_tasks
+        task_indices.append(task_index)
+
     train_index, temp_index = train_test_split(indices, test_size=(1.0 - train_ratio), random_state=42)
     val_index, test_index = train_test_split(temp_index, test_size=test_ratio / (val_ratio + test_ratio),
                                              random_state=42)
@@ -51,4 +59,4 @@ def load_dataset(batch_size, train_ratio, val_ratio, test_ratio, target_indices,
     val_loader = DataLoader([dataset[i] for i in val_index], batch_size=batch_size, shuffle=False)
     test_loader = DataLoader([dataset[i] for i in test_index], batch_size=batch_size, shuffle=False)
 
-    return train_loader, val_loader, test_loader
+    return train_loader, val_loader, test_loader, torch.tensor(task_indices, dtype=torch.long)
