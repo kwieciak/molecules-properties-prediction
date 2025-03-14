@@ -1,7 +1,9 @@
 import pandas as pd
 import torch
+import torch_geometric.data
 from torch_geometric.datasets import QM9
 from torch_geometric.loader import DataLoader
+from torch_geometric.data import Batch
 from sklearn.model_selection import train_test_split
 
 
@@ -9,6 +11,20 @@ def load_dataset(batch_size, train_ratio, val_ratio, test_ratio, target_indices,
                  shuffling=False):
     dataset_path = "./data"
     dataset = QM9(root=dataset_path)
+
+    #Przypisanie nowego atrybutu bezposrednio do pojedynczych obiektow - AttributeError: 'GlobalStorage' object has no attribute 'task_idx'
+    #dataset[0].task_index = torch.tensor([0.5], dtype=torch.float)
+
+    #Przypisanie nowego atrybutu do całego datasetu
+    num_samples = dataset.data.idx.shape[0]
+    dataset.data.task_idx = torch.zeros(num_samples, dtype=torch.long)
+    #print(dataset.data)
+    #Data(x=[2359210, 11], edge_index=[2, 4883516], edge_attr=[4883516, 4], y=[130831, 19], pos=[2359210, 3],idx=[130831], name=[130831], z=[2359210], task_idx=[130831])
+    #print(dataset[0])
+    #Data(x=[5, 11], edge_index=[2, 8], edge_attr=[8, 4], y=[1, 19], pos=[5, 3], idx=[1], name='gdb_1', z=[5]) - brak task_idx
+    #print(dataset[0].task_idx)
+    #AttributeError: 'GlobalStorage' object has no attribute 'task_idx'
+
 
     # choosing regression targets
     y_target = pd.DataFrame(dataset.data.y.cpu().numpy())
@@ -55,8 +71,15 @@ def load_dataset(batch_size, train_ratio, val_ratio, test_ratio, target_indices,
     dataset.data.y = ((dataset.data.y - data_mean) / data_std).to(device)
 
     # putting datasets into dataloaders
+    #train_loader = DataLoader([dataset[i] for i in train_index], batch_size=batch_size, shuffle=shuffling, collate_fn=collate_fn)
     train_loader = DataLoader([dataset[i] for i in train_index], batch_size=batch_size, shuffle=shuffling)
     val_loader = DataLoader([dataset[i] for i in val_index], batch_size=batch_size, shuffle=False)
     test_loader = DataLoader([dataset[i] for i in test_index], batch_size=batch_size, shuffle=False)
 
     return train_loader, val_loader, test_loader, torch.tensor(task_indices, dtype=torch.long)
+
+# def collate_fn(batch):
+#     batch_data = torch_geometric.data.Batch.from_data_list(batch)
+#     batch_task_index = torch.stack([data.task_idx for data in batch])
+#
+#     return batch_data, batch_task_index

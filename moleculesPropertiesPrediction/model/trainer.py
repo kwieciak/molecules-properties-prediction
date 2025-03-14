@@ -56,8 +56,8 @@ def train_epochs(epochs, model, train_loader, val_loader, path, device, task_ind
     best_loss = float("inf")
 
     for epoch in range(epochs):
-        epoch_loss, model = train_gnn(train_loader, model, loss, optimizer, device, task_index)
-        v_loss = eval_gnn(val_loader, model, loss, device, task_index)
+        epoch_loss, model = train_gnn(train_loader, model, loss, optimizer, device, task_indices)
+        v_loss = eval_gnn(val_loader, model, loss, device, task_indices)
 
         if early_stopper.early_stop(v_loss):
             print("Early stopping")
@@ -68,7 +68,7 @@ def train_epochs(epochs, model, train_loader, val_loader, path, device, task_ind
             
         for graph in train_loader:
             graph = graph.to(device)
-            out = model(graph, task_index)
+            out = model(graph, task_indices)
             if epoch == epochs - 1:
                 # record truly vs predicted values for training data from last epoch
                 train_target = np.concatenate((train_target, out.detach().cpu().numpy()[:, 0]))

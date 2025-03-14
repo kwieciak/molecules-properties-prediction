@@ -1,7 +1,7 @@
 import warnings
 import torch
 from data_loader import dataloader
-from model import GNNwithMTL, trainer, tester
+from model import GNNwithMTL, trainer, tester, GNN
 import time
 
 warnings.filterwarnings("ignore")
@@ -14,13 +14,7 @@ def main():
     #train_loader8, val_loader8, test_loader8 = dataloader.load_dataset(8,0.7,0.1,0.2,0.3)
     #train_loader16, val_loader16, test_loader16 = dataloader.load_dataset(16,0.7,0.1,0.2,0.3)
     #train_loader24, val_loader24, test_loader24 = dataloader.load_dataset(24,0.7,0.1,0.2,0.3)
-    train_loader32, val_loader32, test_loader32, task_indices = dataloader.load_dataset(32,0.7,0.1,0.2,[0,3], device,0.001)
-    print(task_indices)
-    print(len(train_loader32))
-    for batch in train_loader32:
-        print(len(batch))
-        print(batch.idx)
-        print(batch[0].idx)
+    train_loader32, val_loader32, test_loader32, task_indices = dataloader.load_dataset(32,0.7,0.1,0.2,[0], device,0.001)
     # modelGCN = GNN.GCN(11, 64).to(device)
     # modelGCN1 = GNN.GCN(11, 64).to(device)
     # modelGCN2 = GNN.GCN(11, 64).to(device)
@@ -112,7 +106,7 @@ def main():
     print()
     print('Dla batch = 32')
     start44 = time.time()
-    gin_train_loss32, gin_val_loss32, gin_train_target32, gin_train_y_target32 = trainer.train_epochs(epochs, modelGIN3,
+    gin_train_loss32, gin_val_loss32, gin_train_target32, gin_train_y_target32 = trainer.train_epochs(epochs, modelGIN3 ,
                                                                                                       train_loader32,
                                                                                                       val_loader32,
                                                                                                       "GIN_model32.pt",device, task_indices)
