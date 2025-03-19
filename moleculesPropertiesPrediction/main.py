@@ -14,7 +14,7 @@ def main():
     #train_loader8, val_loader8, test_loader8 = dataloader.load_dataset(8,0.7,0.1,0.2,0.3)
     #train_loader16, val_loader16, test_loader16 = dataloader.load_dataset(16,0.7,0.1,0.2,0.3)
     #train_loader24, val_loader24, test_loader24 = dataloader.load_dataset(24,0.7,0.1,0.2,0.3)
-    train_loader32, val_loader32, test_loader32, task_indices = dataloader.load_dataset(32,0.7,0.1,0.2,[0], device,0.001)
+    train_loader32, val_loader32, test_loader32, task_indices = dataloader.load_dataset(32,0.7,0.1,0.2,[0,1,2,3], device,0.001)
     # modelGCN = GNN.GCN(11, 64).to(device)
     # modelGCN1 = GNN.GCN(11, 64).to(device)
     # modelGCN2 = GNN.GCN(11, 64).to(device)
