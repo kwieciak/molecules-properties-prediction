@@ -8,7 +8,7 @@ from utils import utils
 from utils.earlystopper import EarlyStopper
 
 
-def train_gnn(loader, model, loss, optimizer, device, task_index):
+def train_gnn(loader, model, loss, optimizer, device):
     # swittching into training mode
     model.train()
 
@@ -19,7 +19,7 @@ def train_gnn(loader, model, loss, optimizer, device, task_index):
         graph.x = graph.x.float()
         graph.y = graph.y.float()
 
-        out = model(graph,task_index)
+        out = model(graph)
 
         l = loss(out, torch.reshape(graph.y.to(device), (len(graph.y), 1)))
         current_loss += l / len(loader)
@@ -31,20 +31,20 @@ def train_gnn(loader, model, loss, optimizer, device, task_index):
 
 
 @torch.no_grad()
-def eval_gnn(loader, model, loss, device, task_index):
+def eval_gnn(loader, model, loss, device):
     # swittching into eval mode
     model.eval()
 
     val_loss = 0
     for graph in loader:
         graph = graph.to(device)
-        out = model(graph, task_index)
+        out = model(graph)
         l = loss(out, torch.reshape(graph.y.to(device), (len(graph.y), 1)))
         val_loss += l / len(loader)
     return val_loss
 
 
-def train_epochs(epochs, model, train_loader, val_loader, path, device, task_indices):
+def train_epochs(epochs, model, train_loader, val_loader, path, device):
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=5e-4)
     loss = torch.nn.MSELoss()
     early_stopper = EarlyStopper(patience=3, min_delta=0.05)
@@ -56,8 +56,8 @@ def train_epochs(epochs, model, train_loader, val_loader, path, device, task_ind
     best_loss = float("inf")
 
     for epoch in range(epochs):
-        epoch_loss, model = train_gnn(train_loader, model, loss, optimizer, device, task_indices)
-        v_loss = eval_gnn(val_loader, model, loss, device, task_indices)
+        epoch_loss, model = train_gnn(train_loader, model, loss, optimizer, device)
+        v_loss = eval_gnn(val_loader, model, loss, device)
 
         if early_stopper.early_stop(v_loss):
             print("Early stopping")
@@ -68,7 +68,7 @@ def train_epochs(epochs, model, train_loader, val_loader, path, device, task_ind
             
         for graph in train_loader:
             graph = graph.to(device)
-            out = model(graph, task_indices)
+            out = model(graph)
             if epoch == epochs - 1:
                 # record truly vs predicted values for training data from last epoch
                 train_target = np.concatenate((train_target, out.detach().cpu().numpy()[:, 0]))

@@ -15,8 +15,8 @@ class GCN(torch.nn.Module):
             str(i): Linear(hidden_channels, out_channels) for i in range(num_tasks)
         })
 
-    def forward(self, data, task_index):
-        x, edge_index = data.x, data.edge_index
+    def forward(self, data):
+        x, edge_index, task_index = data.x, data.edge_index, data.task_index
 
         x = self.conv1(x, edge_index)
         x = x.relu()
@@ -27,6 +27,7 @@ class GCN(torch.nn.Module):
         x = global_mean_pool(x, data.batch)
         x = Fun.dropout(x, p=0.5, training=self.training)
 
+        task_index = task_index[0].item()
         x = self.task_heads[str(task_index)](x)
 
         return x
@@ -42,8 +43,8 @@ class TransformerCN(torch.nn.Module):
             str(i): Linear(hidden_channels * heads, out_channels) for i in range(num_tasks)
         })
 
-    def forward(self, data, task_index):
-        x, edge_index, edge_attr, batch = data.x, data.edge_index, data.edge_attr, data.batch
+    def forward(self, data):
+        x, edge_index, edge_attr, batch, task_index = data.x, data.edge_index, data.edge_attr, data.batch, data.task_index
 
         x = self.conv1(x, edge_index, edge_attr=edge_attr)
         x = x.relu()
@@ -54,6 +55,7 @@ class TransformerCN(torch.nn.Module):
         x = global_mean_pool(x, batch)
         x = Fun.dropout(x, p=0.5, training=self.training)
 
+        task_index = task_index[0].item()
         x = self.task_heads[str(task_index)](x)
 
         return x
@@ -69,8 +71,8 @@ class Gatv2CN(torch.nn.Module):
             str(i): Linear(hidden_channels * heads, out_channels) for i in range(num_tasks)
         })
 
-    def forward(self, data, task_index):
-        x, edge_index, edge_attr, batch = data.x, data.edge_index, data.edge_attr, data.batch
+    def forward(self, data):
+        x, edge_index, edge_attr, batch, task_index = data.x, data.edge_index, data.edge_attr, data.batch, data.task_index
 
         x = self.conv1(x, edge_index, edge_attr=edge_attr)
         x = x.relu()
@@ -81,6 +83,7 @@ class Gatv2CN(torch.nn.Module):
         x = global_mean_pool(x, batch)
         x = Fun.dropout(x, p=0.5, training=self.training)
 
+        task_index = task_index[0].item()
         x = self.task_heads[str(task_index)](x)
 
         return x
@@ -121,8 +124,13 @@ class GIN(torch.nn.Module):
             str(i): Linear(hidden_channels, out_channels) for i in range(num_tasks)
         })
 
-    def forward(self, data, task_index):
-        x, edge_index, batch = data.x, data.edge_index, data.batch
+    def forward(self, data):
+        x, edge_index, batch, task_index = data.x, data.edge_index, data.batch, data.task_index
+
+        print(len(data))
+        print("dypa")
+        print(task_index)
+        print("dypa")
 
         x = self.conv1(x, edge_index)
         x = x.relu()
@@ -133,6 +141,7 @@ class GIN(torch.nn.Module):
         x = global_add_pool(x, batch)
         x = Fun.dropout(x, p=0.5, training=self.training)
 
+        task_index = task_index[0].item()
         x = self.task_heads[str(task_index)](x)
 
         return x
