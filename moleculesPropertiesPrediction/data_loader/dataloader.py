@@ -31,6 +31,7 @@ def load_dataset(batch_size, train_ratio, val_ratio, test_ratio, target_indices,
     val_index, test_index = train_test_split(temp_index, test_size=test_ratio / (val_ratio + test_ratio),
                                              random_state=42)
 
+
     # normalizing the data
     data_mean = dataset.data.y[train_index].mean(dim=0, keepdim=True)
     data_std = dataset.data.y[train_index].std(dim=0, keepdim=True)
@@ -39,12 +40,27 @@ def load_dataset(batch_size, train_ratio, val_ratio, test_ratio, target_indices,
     # putting datasets into dataloaders
     train_loader = DataLoader([dataset[i] for i in train_index], batch_size=batch_size, shuffle=shuffling)
     val_loader = DataLoader([dataset[i] for i in val_index], batch_size=batch_size, shuffle=False)
+
+    print("train index")
+    for i in train_index:
+        print(dataset[i].task_index)
+
+    print("train loader")
+    for batch in train_loader:
+        print(batch.task_index)
+
+    for x in train_loader:
+        print(hasattr(x, "task_index"))
+        print(x[0].task_index)
+
     test_loader = DataLoader([dataset[i] for i in test_index], batch_size=batch_size, shuffle=False)
 
     return train_loader, val_loader, test_loader
 
 def add_new_attribute(data, target_indices):
-    data.task_index = torch.tensor([random.choice(target_indices)], dtype=torch.int)
+    task_index = random.choice(target_indices)
+    data.task_index = torch.tensor([task_index], dtype=torch.long)
+    #data.task_index = torch.tensor([random.choice(target_indices)], dtype=torch.int)
     return data
 
 def prepare_task_indices(target_indices, size):

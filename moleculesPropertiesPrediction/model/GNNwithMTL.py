@@ -141,7 +141,11 @@ class GIN(torch.nn.Module):
         x = global_add_pool(x, batch)
         x = Fun.dropout(x, p=0.5, training=self.training)
 
-        task_index = task_index[0].item()
+
+        f = task_index[0].item()
+        print("siekiera")
+        print(f)
+        print("siekiera")
         x = self.task_heads[str(task_index)](x)
 
         return x
