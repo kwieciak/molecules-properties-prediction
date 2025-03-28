@@ -1,18 +1,6 @@
 import numpy as np
 import torch
 
-@torch.no_grad()
-def eval_gnn(loader, model, loss, device):
-    #swittching into eval mode
-    model.eval()
-
-    val_loss = 0
-    for graph in loader:
-        graph = graph.to(device)
-        out = model(graph)
-        l = loss(out, torch.reshape(graph.y.to(device), (len(graph.y), 1)))
-        val_loss += l / len(loader)
-    return val_loss
 
 @torch.no_grad()
 def test_gnn(loader, model, loss, device):
