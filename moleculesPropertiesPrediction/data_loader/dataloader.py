@@ -8,11 +8,23 @@ from torch_geometric.loader import DataLoader
 from torch_geometric.data import Batch
 from sklearn.model_selection import train_test_split
 
+from data_loader.CustomQM9 import CustomQM9
+
 
 def load_dataset(batch_size, train_ratio, val_ratio, test_ratio, target_indices, device, dataset_usage_ratio=1.0,
                  shuffling=False):
     dataset_path = "./data"
     dataset = QM9(root=dataset_path)
+    test = CustomQM9("./data")
+
+    print('wrappppped')
+
+    print("zebra start")
+    for i in range(10):
+        print(test [i])
+
+    print("zebra stop")
+
     dataset.transform = lambda data: add_new_attribute(data, target_indices)
 
     # choosing regression targets
