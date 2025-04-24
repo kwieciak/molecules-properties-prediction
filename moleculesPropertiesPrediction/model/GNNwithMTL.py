@@ -125,7 +125,7 @@ class GIN(torch.nn.Module):
         })
 
     def forward(self, data):
-        x, edge_index, batch, task_index = data.x, data.edge_index, data.batch, data.task_index
+        x, edge_index, batch, task_index = data.x, data.edge_index, data.batch, data.r_target
 
         print(len(data))
         print("dypa")
@@ -143,8 +143,10 @@ class GIN(torch.nn.Module):
 
 
         f = task_index[0].item()
+        g = task_index[1].item()
         print("siekiera")
         print(f)
+        print(g)
         print("siekiera")
         x = self.task_heads[str(task_index)](x)
 
