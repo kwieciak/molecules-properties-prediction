@@ -14,12 +14,7 @@ def load_dataset(batch_size, train_ratio, val_ratio, test_ratio, target_indices,
     dataset = CustomQM9(root=dataset_path, target_indices=target_indices)
 
     # choosing regression targets
-    y_target = pd.DataFrame(dataset.data.y.cpu().numpy())
-    dataset.data.y = torch.Tensor(y_target[target_indices].values).to(device)
-
-    # shuffling data
-    if shuffling:
-        dataset = dataset.shuffle()
+    dataset.data.y = dataset.data.y[:, target_indices].to(device)
 
     # splitting the data
     num_samples = int(len(dataset) * dataset_usage_ratio)

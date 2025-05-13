@@ -8,45 +8,64 @@ from utils import utils
 from utils.earlystopper import EarlyStopper
 
 
-def train_gnn(loader, model, loss, optimizer, device):
-    # swittching into training mode
+def train_gnn(loader, model, loss_fn, optimizer, device, task_weights=None):
+    # switching into training mode
     model.train()
-
-    current_loss = 0
-    for graph in loader:
-        graph = graph.to(device)
+    total_loss = 0.0
+    
+    for batch in loader:
+        batch = batch.to(device)
         optimizer.zero_grad()
-        graph.x = graph.x.float()
-        graph.y = graph.y.float()
+        batch.x = batch.x.float()
+        batch.y = batch.y.float()
 
-        out = model(graph)
+        preds = model(batch)
+        targets = batch.y.to(device)
 
-        l = loss(out, torch.reshape(graph.y.to(device), (len(graph.y), 1)))
-        current_loss += l / len(loader)
+        per_task_loss = loss_fn(preds, targets)
 
-        l.backward()
+        if task_weights is not None:
+            w = batch.y.new_tensor(task_weights)
+            per_task_loss = per_task_loss * w
+
+        loss = per_task_loss.mean()
+
+        loss.backward()
         optimizer.step()
+        total_loss += loss.item()
 
-    return current_loss, model
+    return total_loss/len(loader), model
 
 
 @torch.no_grad()
-def eval_gnn(loader, model, loss, device):
-    # swittching into eval mode
+def eval_gnn(loader, model, loss_fn, device, task_weights=None):
+    # switching into eval mode
     model.eval()
+    total_loss = 0.0
 
-    val_loss = 0
-    for graph in loader:
-        graph = graph.to(device)
-        out = model(graph)
-        l = loss(out, torch.reshape(graph.y.to(device), (len(graph.y), 1)))
-        val_loss += l / len(loader)
-    return val_loss
+    for data in loader:
+        data = data.to(device)
+        data.x = data.x.float()
+        data.y = data.y.float()
+
+        preds = model(data)
+        targets = data.y
+
+        per_task_loss = loss_fn(preds, targets)
+
+        if task_weights is not None:
+            w = data.y.new_tensor(task_weights)
+            per_task_loss = per_task_loss * w
+
+        loss = per_task_loss.mean()
+        total_loss += loss.item()
+
+    return total_loss / len(loader)
 
 
 def train_epochs(epochs, model, train_loader, val_loader, path, device):
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=5e-4)
-    loss = torch.nn.MSELoss()
+    loss = torch.nn.MSELoss(reduction='none')
     early_stopper = EarlyStopper(patience=3, min_delta=0.05)
 
     train_target = np.empty(0)
@@ -65,6 +84,7 @@ def train_epochs(epochs, model, train_loader, val_loader, path, device):
 
         if v_loss < best_loss:
             torch.save(model.state_dict(), path)
+            best_loss = v_loss
             
         for graph in train_loader:
             graph = graph.to(device)

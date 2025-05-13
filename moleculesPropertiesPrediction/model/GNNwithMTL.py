@@ -1,6 +1,6 @@
 import torch
 from torch_geometric.nn import GCNConv, TransformerConv, GATv2Conv, GINConv,  global_mean_pool, global_add_pool
-from torch.nn import Sequential, Linear, ReLU, BatchNorm1d, ModuleDict
+from torch.nn import Sequential, Linear, ReLU, BatchNorm1d, ModuleDict, ModuleList
 import torch.nn.functional as Fun
 
 
@@ -120,17 +120,12 @@ class GIN(torch.nn.Module):
             )
         )
 
-        self.task_heads = ModuleDict({
-            str(i): Linear(hidden_channels, out_channels) for i in range(num_tasks)
+        self.task_heads = ModuleList({
+            Linear(hidden_channels, out_channels) for _ in range(num_tasks)
         })
 
     def forward(self, data):
-        x, edge_index, batch, task_index = data.x, data.edge_index, data.batch, data.r_target
-
-        print(len(data))
-        print("dypa")
-        print(task_index)
-        print("dypa")
+        x, edge_index, batch, r_target = data.x, data.edge_index, data.batch, 0
 
         x = self.conv1(x, edge_index)
         x = x.relu()
@@ -141,13 +136,7 @@ class GIN(torch.nn.Module):
         x = global_add_pool(x, batch)
         x = Fun.dropout(x, p=0.5, training=self.training)
 
-
-        f = task_index[0].item()
-        g = task_index[1].item()
-        print("siekiera")
-        print(f)
-        print(g)
-        print("siekiera")
-        x = self.task_heads[str(task_index)](x)
+        outs = [head(x) for head in self.task_heads]
+        return torch.cat(outs, dim=1)
 
         return x
