@@ -11,12 +11,12 @@ class GCN(torch.nn.Module):
         self.conv2 = GCNConv(hidden_channels, hidden_channels)
         self.conv3 = GCNConv(hidden_channels, hidden_channels)
 
-        self.task_heads = ModuleDict({
-            str(i): Linear(hidden_channels, out_channels) for i in range(num_tasks)
+        self.task_heads = ModuleList({
+            Linear(hidden_channels, out_channels) for _ in num_tasks
         })
 
     def forward(self, data):
-        x, edge_index, task_index = data.x, data.edge_index, data.task_index
+        x, edge_index, r_target  = data.x, data.edge_index, data.r_target
 
         x = self.conv1(x, edge_index)
         x = x.relu()
@@ -27,10 +27,8 @@ class GCN(torch.nn.Module):
         x = global_mean_pool(x, data.batch)
         x = Fun.dropout(x, p=0.5, training=self.training)
 
-        task_index = task_index[0].item()
-        x = self.task_heads[str(task_index)](x)
-
-        return x
+        outs = [head(x) for head in self.task_heads]
+        return torch.cat(outs, dim=1)
 
 class TransformerCN(torch.nn.Module):
     def __init__(self, in_channels, hidden_channels, num_tasks, out_channels=1, heads=4):
@@ -39,12 +37,12 @@ class TransformerCN(torch.nn.Module):
         self.conv2 = TransformerConv(hidden_channels * heads, hidden_channels, heads=heads, edge_dim=4)
         self.conv3 = TransformerConv(hidden_channels * heads, hidden_channels, heads=heads, edge_dim=4)
 
-        self.task_heads = ModuleDict({
-            str(i): Linear(hidden_channels * heads, out_channels) for i in range(num_tasks)
+        self.task_heads = ModuleList({
+            Linear(hidden_channels, out_channels) for _ in num_tasks
         })
 
     def forward(self, data):
-        x, edge_index, edge_attr, batch, task_index = data.x, data.edge_index, data.edge_attr, data.batch, data.task_index
+        x, edge_index, edge_attr, batch, r_target = data.x, data.edge_index, data.edge_attr, data.batch, data.r_target
 
         x = self.conv1(x, edge_index, edge_attr=edge_attr)
         x = x.relu()
@@ -55,10 +53,8 @@ class TransformerCN(torch.nn.Module):
         x = global_mean_pool(x, batch)
         x = Fun.dropout(x, p=0.5, training=self.training)
 
-        task_index = task_index[0].item()
-        x = self.task_heads[str(task_index)](x)
-
-        return x
+        outs = [head(x) for head in self.task_heads]
+        return torch.cat(outs, dim=1)
 
 class Gatv2CN(torch.nn.Module):
     def __init__(self, in_channels, hidden_channels, num_tasks, out_channels=1, heads=4):
@@ -67,12 +63,12 @@ class Gatv2CN(torch.nn.Module):
         self.conv2 = GATv2Conv(hidden_channels * heads, hidden_channels, heads=heads, edge_dim=4, concat=True)
         self.conv3 = GATv2Conv(hidden_channels * heads, hidden_channels, heads=heads, edge_dim=4, concat=True)
 
-        self.task_heads = ModuleDict({
-            str(i): Linear(hidden_channels * heads, out_channels) for i in range(num_tasks)
+        self.task_heads = ModuleList({
+            Linear(hidden_channels, out_channels) for _ in num_tasks
         })
 
     def forward(self, data):
-        x, edge_index, edge_attr, batch, task_index = data.x, data.edge_index, data.edge_attr, data.batch, data.task_index
+        x, edge_index, edge_attr, batch, r_target = data.x, data.edge_index, data.edge_attr, data.batch, data.r_target
 
         x = self.conv1(x, edge_index, edge_attr=edge_attr)
         x = x.relu()
@@ -83,10 +79,8 @@ class Gatv2CN(torch.nn.Module):
         x = global_mean_pool(x, batch)
         x = Fun.dropout(x, p=0.5, training=self.training)
 
-        task_index = task_index[0].item()
-        x = self.task_heads[str(task_index)](x)
-
-        return x
+        outs = [head(x) for head in self.task_heads]
+        return torch.cat(outs, dim=1)
 
 
 class GIN(torch.nn.Module):
@@ -121,11 +115,11 @@ class GIN(torch.nn.Module):
         )
 
         self.task_heads = ModuleList({
-            Linear(hidden_channels, out_channels) for _ in range(num_tasks)
+            Linear(hidden_channels, out_channels) for _ in num_tasks
         })
 
     def forward(self, data):
-        x, edge_index, batch, r_target = data.x, data.edge_index, data.batch, 0
+        x, edge_index, batch, r_target = data.x, data.edge_index, data.batch, data.r_target
 
         x = self.conv1(x, edge_index)
         x = x.relu()
@@ -138,5 +132,3 @@ class GIN(torch.nn.Module):
 
         outs = [head(x) for head in self.task_heads]
         return torch.cat(outs, dim=1)
-
-        return x

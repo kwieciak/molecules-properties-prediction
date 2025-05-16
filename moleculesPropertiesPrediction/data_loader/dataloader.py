@@ -24,7 +24,7 @@ def load_dataset(batch_size, train_ratio, val_ratio, test_ratio, target_indices,
     val_index, test_index = train_test_split(temp_index, test_size=test_ratio / (val_ratio + test_ratio),
                                              random_state=42)
 
-    # normalizing the data
+    # normalizing (standardization) the data
     data_mean = dataset.data.y[train_index].mean(dim=0, keepdim=True)
     data_std = dataset.data.y[train_index].std(dim=0, keepdim=True)
     dataset.data.y = ((dataset.data.y - data_mean) / data_std).to(device)
