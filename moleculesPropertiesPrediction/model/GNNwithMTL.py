@@ -79,7 +79,7 @@ class Gatv2CN(torch.nn.Module):
         x = global_mean_pool(x, batch)
         x = Fun.dropout(x, p=0.5, training=self.training)
 
-        outs = [head(x) for head in self.task_heads]
+        outs = [head(x) for head in self.task_heads if r_target ]
         return torch.cat(outs, dim=1)
 
 
@@ -113,13 +113,13 @@ class GIN(torch.nn.Module):
                 ReLU()
             )
         )
-
-        self.task_heads = ModuleList({
+        self.num_tasks = num_tasks
+        self.task_heads = ModuleList([
             Linear(hidden_channels, out_channels) for _ in num_tasks
-        })
+        ])
 
     def forward(self, data):
-        x, edge_index, batch, r_target = data.x, data.edge_index, data.batch, data.r_target
+        x, edge_index, batch, r_targets = data.x, data.edge_index, data.batch, data.r_target
 
         x = self.conv1(x, edge_index)
         x = x.relu()
@@ -130,5 +130,15 @@ class GIN(torch.nn.Module):
         x = global_add_pool(x, batch)
         x = Fun.dropout(x, p=0.5, training=self.training)
 
-        outs = [head(x) for head in self.task_heads]
-        return torch.cat(outs, dim=1)
+        # do refaktoru
+        outs = []
+        for i, r_target in enumerate(r_targets):
+            for j, head in zip(self.num_tasks, self.task_heads):
+                if r_target.item() == j:
+                    outs.append(head(x[i]))
+
+
+
+        #outs = [head(x) for head in self.task_heads]
+        #return torch.cat(outs, dim=1) <- stare podejscie
+        return torch.cat(outs, dim=0)

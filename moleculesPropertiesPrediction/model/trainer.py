@@ -12,17 +12,26 @@ def train_gnn(loader, model, loss_fn, optimizer, device, task_weights=None):
     # switching into training mode
     model.train()
     total_loss = 0.0
-    
+
     for batch in loader:
         batch = batch.to(device)
         optimizer.zero_grad()
         batch.x = batch.x.float()
         batch.y = batch.y.float()
 
-        preds = model(batch)
-        targets = batch.y.to(device)
+        #do refaktoru
+        correct_y = []
+        for i, r_target in enumerate(batch.r_target):
+            correct_y.append(batch.y[i][r_target])
+        correct_yy = torch.stack(correct_y)
 
-        per_task_loss = loss_fn(preds, targets)
+
+        preds = model(batch)
+        #targets = batch.y.to(device) <- stare podejscie
+        #per_task_loss = loss_fn(preds, targets)
+
+        per_task_loss = loss_fn(preds, correct_yy)
+
 
         if task_weights is not None:
             w = batch.y.new_tensor(task_weights)
@@ -34,7 +43,7 @@ def train_gnn(loader, model, loss_fn, optimizer, device, task_weights=None):
         optimizer.step()
         total_loss += loss.item()
 
-    return total_loss/len(loader)
+    return total_loss / len(loader)
 
 
 @torch.no_grad()
@@ -43,18 +52,26 @@ def eval_gnn(loader, model, loss_fn, device, task_weights=None):
     model.eval()
     total_loss = 0.0
 
-    for data in loader:
-        data = data.to(device)
-        data.x = data.x.float()
-        data.y = data.y.float()
 
-        preds = model(data)
-        targets = data.y
+    for batch in loader:
+        batch = batch.to(device)
+        batch.x = batch.x.float()
+        batch.y = batch.y.float()
 
-        per_task_loss = loss_fn(preds, targets)
+        #do refaktoru
+        correct_y = []
+        for i, r_target in enumerate(batch.r_target):
+            correct_y.append(batch.y[i][r_target])
+        correct_yy = torch.stack(correct_y)
+
+        preds = model(batch)
+        # targets = batch.y.to(device) <- stare podejscie
+        # per_task_loss = loss_fn(preds, targets)
+
+        per_task_loss = loss_fn(preds, correct_yy)
 
         if task_weights is not None:
-            w = data.y.new_tensor(task_weights)
+            w = batch.y.new_tensor(task_weights)
             per_task_loss = per_task_loss * w
 
         loss = per_task_loss.mean()
@@ -66,7 +83,7 @@ def eval_gnn(loader, model, loss_fn, device, task_weights=None):
 def train_epochs(epochs, model, train_loader, val_loader, path, device):
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=5e-4)
     loss = torch.nn.MSELoss(reduction='none')
-    early_stopper = EarlyStopper(patience=3, min_delta=0.05)
+    early_stopper = EarlyStopper(patience=5, min_delta=0.05)
 
     train_losses, val_losses = [], []
     best_val = float('inf')
@@ -130,4 +147,4 @@ def train_epochs(epochs, model, train_loader, val_loader, path, device):
     #     # torch.cuda.empty_cache()
     #     # torch.cuda.ipc_collect()
     #
-    # return train_loss, val_loss, train_target, train_y_target
+    # return train_loss, val_loss, train_target, train_y_target <- stare podejscie

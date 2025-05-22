@@ -1,7 +1,3 @@
-import random
-
-import pandas as pd
-import torch
 from sklearn.model_selection import train_test_split
 from torch_geometric.loader import DataLoader
 
@@ -14,7 +10,8 @@ def load_dataset(batch_size, train_ratio, val_ratio, test_ratio, target_indices,
     dataset = CustomQM9(root=dataset_path, target_indices=target_indices)
 
     # choosing regression targets
-    dataset.data.y = dataset.data.y[:, target_indices].to(device)
+    #dataset.data.y = dataset.data.y[:, target_indices].to(device) <- stare podejscie
+
 
     # splitting the data
     num_samples = int(len(dataset) * dataset_usage_ratio)
@@ -35,23 +32,3 @@ def load_dataset(batch_size, train_ratio, val_ratio, test_ratio, target_indices,
     test_loader = DataLoader([dataset[i] for i in test_index], batch_size=batch_size, shuffle=False)
 
     return train_loader, val_loader, test_loader
-
-
-def add_new_attribute(data, target_indices):
-    task_index = random.choice(target_indices)
-    data.task_index = torch.tensor([task_index], dtype=torch.long)
-    # data.task_index = torch.tensor([random.choice(target_indices)], dtype=torch.int)
-    return data
-
-
-def prepare_task_indices(target_indices, size):
-    num_tasks = len(target_indices)
-    samples_per_task = size // num_tasks
-    task_indices = []
-
-    for i in range(size):
-        task_index = (i // samples_per_task) % num_tasks
-        task_indices.append(task_index)
-
-    return task_indices
-    # return torch.tensor(task_indices, dtype=torch.long)

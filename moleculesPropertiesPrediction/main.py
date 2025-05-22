@@ -11,8 +11,8 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def main():
     print(device)
-    epochs = 51
-    target_indices = [0, 1, 2, 3]
+    epochs = 50
+    target_indices = [0, 3, 5, 10] #trenowac na od 0 do 17 a testoweac na 18 vs trenowany tylko na 18
     batch_size = 32
     train_ratio = 0.7
     val_ratio = 0.1
@@ -29,11 +29,11 @@ def main():
     # gin_train_loss32, gin_val_loss32, gin_train_target32, gin_train_y_target32 = trainer.train_epochs(epochs, modelGIN ,
     #                                                                                                   train_loader,
     #                                                                                                   val_loader,
-    #                                                                                                   "GIN_model32.pt",device)
+    #                                                                                                   "saved_models/GIN.pt",device)
     gin_train_loss, gin_val_loss = trainer.train_epochs(epochs, modelGIN,
                                                         train_loader,
                                                         val_loader,
-                                                        "GIN_model32.pt",
+                                                        "saved_models/GIN.pt",
                                                         device)
     end = time.time()
     print('Time = ', end - start)

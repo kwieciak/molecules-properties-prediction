@@ -1,5 +1,6 @@
-import torch
 import random
+
+import torch
 from torch_geometric.data import InMemoryDataset
 from torch_geometric.datasets import QM9
 
@@ -14,7 +15,7 @@ class CustomQM9(InMemoryDataset):
         data_list = []
         for data in self.original_data:
             target_index = random.choice(target_indices)
-            data.r_target= torch.tensor(target_index)
+            data.r_target = torch.tensor(target_index)
             data_list.append(data)
         return self.collate(data_list)
 
