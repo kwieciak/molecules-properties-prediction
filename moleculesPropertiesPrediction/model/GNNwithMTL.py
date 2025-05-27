@@ -113,10 +113,11 @@ class GIN(torch.nn.Module):
                 ReLU()
             )
         )
-        self.num_tasks = num_tasks
-        self.task_heads = ModuleList([
-            Linear(hidden_channels, out_channels) for _ in num_tasks
-        ])
+
+        self.task_heads = ModuleDict({
+            str(i): Linear(hidden_channels, out_channels)
+            for i in num_tasks
+        })
 
     def forward(self, data):
         x, edge_index, batch, r_targets = data.x, data.edge_index, data.batch, data.r_target
@@ -130,15 +131,14 @@ class GIN(torch.nn.Module):
         x = global_add_pool(x, batch)
         x = Fun.dropout(x, p=0.5, training=self.training)
 
-        # do refaktoru
         outs = []
         for i, r_target in enumerate(r_targets):
-            for j, head in zip(self.num_tasks, self.task_heads):
-                if r_target.item() == j:
-                    outs.append(head(x[i]))
+            head = self.task_heads[str(int(r_target))]
+            outs.append(head(x[i].unsqueeze(0)))
 
-
+        return torch.cat(outs, dim=0).squeeze(-1)
 
         #outs = [head(x) for head in self.task_heads]
         #return torch.cat(outs, dim=1) <- stare podejscie
-        return torch.cat(outs, dim=0)
+
+

@@ -12,7 +12,6 @@ def load_dataset(batch_size, train_ratio, val_ratio, test_ratio, target_indices,
     # choosing regression targets
     #dataset.data.y = dataset.data.y[:, target_indices].to(device) <- stare podejscie
 
-
     # splitting the data
     num_samples = int(len(dataset) * dataset_usage_ratio)
     indices = list(range(num_samples))
