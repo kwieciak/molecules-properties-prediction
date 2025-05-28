@@ -19,18 +19,12 @@ def train_gnn(loader, model, loss_fn, optimizer, device, task_weights=None):
         batch.x = batch.x.float()
         batch.y = batch.y.float()
 
-        #do refaktoru
-        correct_y = []
-        for i, r_target in enumerate(batch.r_target):
-            correct_y.append(batch.y[i][r_target])
-        correct_yy = torch.stack(correct_y)
+        batch_size = batch.y.shape[0]
+        idx = torch.arange(batch_size, device=batch.y.device)
 
-
+        targets = batch.y[idx, batch.r_target]
         preds = model(batch)
-        #targets = batch.y.to(device) <- stare podejscie
-        #per_task_loss = loss_fn(preds, targets)
-
-        per_task_loss = loss_fn(preds, correct_yy)
+        per_task_loss = loss_fn(preds, targets)
 
 
         if task_weights is not None:
@@ -58,17 +52,13 @@ def eval_gnn(loader, model, loss_fn, device, task_weights=None):
         batch.x = batch.x.float()
         batch.y = batch.y.float()
 
-        #do refaktoru
-        correct_y = []
-        for i, r_target in enumerate(batch.r_target):
-            correct_y.append(batch.y[i][r_target])
-        correct_yy = torch.stack(correct_y)
+        batch_size = batch.y.shape[0]
+        idx = torch.arange(batch_size, device=batch.y.device)
 
+        targets = batch.y[idx, batch.r_target]
         preds = model(batch)
-        # targets = batch.y.to(device) <- stare podejscie
-        # per_task_loss = loss_fn(preds, targets)
 
-        per_task_loss = loss_fn(preds, correct_yy)
+        per_task_loss = loss_fn(preds, targets)
 
         if task_weights is not None:
             w = batch.y.new_tensor(task_weights)
@@ -106,45 +96,3 @@ def train_epochs(epochs, model, train_loader, val_loader, path, device):
             break
 
     return train_losses, val_losses
-    # train_target = np.empty(0)
-    # train_y_target = np.empty(0)
-    # train_loss = np.empty(epochs)
-    # val_loss = np.empty(epochs)
-    # best_loss = float("inf")
-    #
-    # for epoch in range(epochs):
-    #     epoch_loss = train_gnn(train_loader, model, loss, optimizer, device)
-    #     v_loss = eval_gnn(val_loader, model, loss, device)
-    #
-    #     if early_stopper.early_stop(v_loss):
-    #         print("Early stopping")
-    #         break
-    #
-    #     if v_loss < best_loss:
-    #         torch.save(model.state_dict(), path)
-    #         best_loss = v_loss
-    #
-    #     for graph in train_loader:
-    #         graph = graph.to(device)
-    #         out = model(graph)
-    #         # if epoch == epochs - 1:
-    #         #     # record truly vs predicted values for training data from last epoch
-    #         #     train_target = np.concatenate((train_target, out.detach().cpu().numpy()[:, 0]))
-    #         #     train_y_target = np.concatenate((train_y_target, graph.y.detach().cpu().numpy()))
-    #
-    #     train_loss[epoch] = epoch_loss.detach().cpu().numpy()
-    #     val_loss[epoch] = v_loss.detach().cpu().numpy()
-    #
-    #     if epoch % 1 == 0:
-    #         print("Epoch: " + str(epoch)
-    #               + ", Train loss: " + str(epoch_loss.item())
-    #               + ", Val loss: " + str(v_loss.item())
-    #               )
-    #         # utils.print_gpu_memory()
-    #         # utils.print_memory_usage()
-    #
-    #     # these functions should not be called explicitly
-    #     # torch.cuda.empty_cache()
-    #     # torch.cuda.ipc_collect()
-    #
-    # return train_loss, val_loss, train_target, train_y_target <- stare podejscie
