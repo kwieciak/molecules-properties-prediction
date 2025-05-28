@@ -1,10 +1,5 @@
-import math
-import numpy as np
 import torch
 
-import utils.utils
-from model import tester
-from utils import utils
 from utils.earlystopper import EarlyStopper
 
 
@@ -14,22 +9,13 @@ def train_gnn(loader, model, loss_fn, optimizer, device, task_weights=None):
     total_loss = 0.0
 
     for batch in loader:
-        batch = batch.to(device)
         optimizer.zero_grad()
-        batch.x = batch.x.float()
-        batch.y = batch.y.float()
+        preds, targets = _prepare_preds_and_targets(batch, model, device)
 
-        batch_size = batch.y.shape[0]
-        idx = torch.arange(batch_size, device=batch.y.device)
-
-        targets = batch.y[idx, batch.r_target]
-        preds = model(batch)
         per_task_loss = loss_fn(preds, targets)
 
-
-        if task_weights is not None:
-            w = batch.y.new_tensor(task_weights)
-            per_task_loss = per_task_loss * w
+        # if task_weights is not None:
+        # TODO: add implementation of task_weights handling
 
         loss = per_task_loss.mean()
 
@@ -46,23 +32,13 @@ def eval_gnn(loader, model, loss_fn, device, task_weights=None):
     model.eval()
     total_loss = 0.0
 
-
     for batch in loader:
-        batch = batch.to(device)
-        batch.x = batch.x.float()
-        batch.y = batch.y.float()
-
-        batch_size = batch.y.shape[0]
-        idx = torch.arange(batch_size, device=batch.y.device)
-
-        targets = batch.y[idx, batch.r_target]
-        preds = model(batch)
+        preds, targets = _prepare_preds_and_targets(batch, model, device)
 
         per_task_loss = loss_fn(preds, targets)
 
-        if task_weights is not None:
-            w = batch.y.new_tensor(task_weights)
-            per_task_loss = per_task_loss * w
+        # if task_weights is not None:
+        # TODO: add implementation of task_weights handling
 
         loss = per_task_loss.mean()
         total_loss += loss.item()
@@ -70,7 +46,7 @@ def eval_gnn(loader, model, loss_fn, device, task_weights=None):
     return total_loss / len(loader)
 
 
-def train_epochs(epochs, model, train_loader, val_loader, path, device):
+def train_epochs(epochs, model, train_loader, val_loader, path, device, task_weights=None):
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=5e-4)
     loss = torch.nn.MSELoss(reduction='none')
     early_stopper = EarlyStopper(patience=5, min_delta=0.05)
@@ -96,3 +72,17 @@ def train_epochs(epochs, model, train_loader, val_loader, path, device):
             break
 
     return train_losses, val_losses
+
+
+def _prepare_preds_and_targets(batch, model, device):
+    batch = batch.to(device)
+    batch.x = batch.x.float()
+    batch.y = batch.y.float()
+
+    preds = model(batch)
+
+    batch_size = batch.y.shape[0]
+    idx = torch.arange(batch_size, device=batch.y.device)
+    targets = batch.y[idx, batch.r_target]
+
+    return preds, targets

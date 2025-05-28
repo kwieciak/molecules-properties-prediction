@@ -13,6 +13,7 @@ def main():
     print(device)
     epochs = 50
     target_indices = [0, 3, 5, 10] #trenowac na od 0 do 17 a testoweac na 18 vs trenowany tylko na 18
+    task_weights = [1,2,3,4]
     batch_size = 32
     train_ratio = 0.7
     val_ratio = 0.1
@@ -34,7 +35,7 @@ def main():
                                                         train_loader,
                                                         val_loader,
                                                         "saved_models/GIN.pt",
-                                                        device)
+                                                        device, task_weights)
     end = time.time()
     print('Time = ', end - start)
 
