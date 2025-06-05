@@ -1,5 +1,7 @@
 import warnings
 import torch
+
+import utils.utils
 from data_loader import dataloader
 from model import GNNwithMTL, trainer, tester, GNN
 import time
@@ -41,7 +43,6 @@ def main():
                                                         device, task_weights)
     end = time.time()
     print('Time = ', end - start)
-
     metrics = tester.test_gnn(test_loader, modelGIN, test_task, device)
     print(f"Test RMSE: {metrics['rmse']:.4f}, MAE: {metrics['mae']:.4f}, R2: {metrics['r2']:.4f}")
 
