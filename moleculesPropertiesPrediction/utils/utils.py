@@ -92,6 +92,67 @@ def load_preds_targets_csv(filepath):
     return preds_list, targets_list
 
 
+def plot_metric_comparison(metrics1, metrics2, metric_name, label1, label2):
+    ensure_results_folder()
+    timestamp = get_timestamp()
 
+    values = [metrics1[metric_name], metrics2[metric_name]]
+    labels = [label1, label2]
+
+    plt.figure(figsize=(6, 5))
+    bars = plt.bar(labels, values, width=0.5)
+    plt.ylabel(metric_name.upper())
+    plt.title(f"{metric_name.upper()} comparison")
+    plt.ylim(0, max(values) * 1.2)
+    plt.grid(axis='y', linestyle='--', alpha=0.6)
+
+    for bar in bars:
+        yval = bar.get_height()
+        plt.text(bar.get_x() + bar.get_width() / 2.0, yval + 0.01, f"{yval:.4f}", ha='center', va='bottom')
+
+    filename = f"results/{metric_name}_comparison_{timestamp}.png"
+    plt.tight_layout()
+    plt.savefig(filename)
+    plt.close()
+
+def plot_learning_curve(train_loss, val_loss, label):
+    ensure_results_folder()
+    timestamp = get_timestamp()
+    epochs = list(range(1, len(train_loss) + 1))
+
+    plt.figure(figsize=(8, 5))
+    plt.plot(epochs, train_loss, label="Train Loss", linewidth=2)
+    plt.plot(epochs, val_loss, label="Validation Loss", linewidth=2)
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.title(f"Learning curve – {label}")
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.6)
+
+    filename = f"results/learning_curve_{label.replace(' ', '_').lower()}_{timestamp}.png"
+    plt.tight_layout()
+    plt.savefig(filename)
+    plt.close()
+
+def plot_parity_plot(preds, targets, label):
+    ensure_results_folder()
+    timestamp = get_timestamp()
+
+    plt.figure(figsize=(6, 6))
+    plt.scatter(targets, preds, alpha=0.6, label="Values")
+    min_val = min(min(preds), min(targets))
+    max_val = max(max(preds), max(targets))
+    plt.plot([min_val, max_val], [min_val, max_val], 'r--', label="Diagonal line")
+
+    plt.xlabel("Targets")
+    plt.ylabel("Predictions")
+    plt.title(f"Parity Plot – {label}")
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.5)
+
+    filename = f"results/parity_plot_{label.replace(' ', '_').lower()}_{timestamp}.png"
+    plt.tight_layout()
+    plt.savefig(filename)
+    plt.close()
 
 # TODO: funkcja do tworzenia plotu, parity plot

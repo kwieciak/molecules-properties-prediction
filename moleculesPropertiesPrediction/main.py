@@ -91,7 +91,12 @@ def main():
     metrics2, preds2, targets2 = tester.test_gnn(test_loader2, modelGIN2, test_r_target2, device)
     print(f"Test RMSE: {metrics2['rmse']:.4f}, MAE: {metrics2['mae']:.4f}, R2: {metrics2['r2']:.4f}")
 
+    # utils.utils.plot_metric_comparison(metrics1, metrics2, "r2", "experiment with MTL", "experiment without MTL")
+    # utils.utils.plot_metric_comparison(metrics1, metrics2, "rmse", "experiment with MTL", "experiment without MTL")
+    # utils.utils.plot_metric_comparison(metrics1, metrics2, "mae", "experiment with MTL", "experiment without MTL")
 
+    utils.utils.plot_learning_curve(gin_train_loss1, gin_val_loss1, "experiment with MTl")
+    utils.utils.plot_parity_plot(preds1, targets1, "experiment with MTl")
 
     return
 
