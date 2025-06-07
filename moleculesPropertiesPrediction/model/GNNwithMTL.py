@@ -5,7 +5,7 @@ from torch_geometric.nn import GCNConv, TransformerConv, GATv2Conv, GINConv, glo
 
 
 class GCN(torch.nn.Module):
-    def __init__(self, in_channels, hidden_channels, num_tasks, out_channels=1):
+    def __init__(self, in_channels, hidden_channels, tasks, out_channels=1):
         super().__init__()
         self.conv1 = GCNConv(in_channels, hidden_channels)
         self.conv2 = GCNConv(hidden_channels, hidden_channels)
@@ -13,7 +13,7 @@ class GCN(torch.nn.Module):
 
         self.task_heads = ModuleDict({
             str(i): Linear(hidden_channels, out_channels)
-            for i in num_tasks
+            for i in tasks
         })
 
     def forward(self, data):
@@ -37,7 +37,7 @@ class GCN(torch.nn.Module):
 
 
 class TransformerCN(torch.nn.Module):
-    def __init__(self, in_channels, hidden_channels, num_tasks, out_channels=1, heads=4):
+    def __init__(self, in_channels, hidden_channels, tasks, out_channels=1, heads=4):
         super().__init__()
         self.conv1 = TransformerConv(in_channels, hidden_channels, heads=heads, edge_dim=4)
         self.conv2 = TransformerConv(hidden_channels * heads, hidden_channels, heads=heads, edge_dim=4)
@@ -45,7 +45,7 @@ class TransformerCN(torch.nn.Module):
 
         self.task_heads = ModuleDict({
             str(i): Linear(hidden_channels, out_channels)
-            for i in num_tasks
+            for i in tasks
         })
 
     def forward(self, data):
@@ -67,7 +67,7 @@ class TransformerCN(torch.nn.Module):
 
 
 class Gatv2CN(torch.nn.Module):
-    def __init__(self, in_channels, hidden_channels, num_tasks, out_channels=1, heads=4):
+    def __init__(self, in_channels, hidden_channels, tasks, out_channels=1, heads=4):
         super().__init__()
         self.conv1 = GATv2Conv(in_channels, hidden_channels, heads=heads, edge_dim=4, concat=True)
         self.conv2 = GATv2Conv(hidden_channels * heads, hidden_channels, heads=heads, edge_dim=4, concat=True)
@@ -75,7 +75,7 @@ class Gatv2CN(torch.nn.Module):
 
         self.task_heads = ModuleDict({
             str(i): Linear(hidden_channels, out_channels)
-            for i in num_tasks
+            for i in tasks
         })
 
     def forward(self, data):
@@ -97,7 +97,7 @@ class Gatv2CN(torch.nn.Module):
 
 
 class GIN(torch.nn.Module):
-    def __init__(self, in_channels, hidden_channels, num_tasks, out_channels=1):
+    def __init__(self, in_channels, hidden_channels, tasks, out_channels=1):
         super().__init__()
 
         def make_mlp():
@@ -123,7 +123,7 @@ class GIN(torch.nn.Module):
 
         self.task_heads = ModuleDict({
             str(i): Linear(hidden_channels, out_channels)
-            for i in num_tasks
+            for i in tasks
         })
 
     def forward(self, data):

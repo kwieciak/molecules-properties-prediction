@@ -4,10 +4,10 @@ from torch_geometric.loader import DataLoader
 from data_loader.CustomQM9 import CustomQM9
 
 
-def load_dataset(batch_size, train_ratio, val_ratio, test_ratio, target_indices, device, dataset_usage_ratio=1.0,
+def load_dataset(batch_size, train_ratio, val_ratio, test_ratio, train_r_targets, device, dataset_usage_ratio=1.0,
                  shuffling=False):
     dataset_path = "./data"
-    dataset = CustomQM9(root=dataset_path, target_indices=target_indices)
+    dataset = CustomQM9(root=dataset_path, train_r_targets=train_r_targets)
 
     # splitting the data
     num_samples = int(len(dataset) * dataset_usage_ratio)

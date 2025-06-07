@@ -29,4 +29,4 @@ def test_gnn(loader, model, test_task, device):
     mae = mean_absolute_error(all_targets, all_preds)
     r2 = r2_score(all_targets, all_preds)
 
-    return {"rmse": rmse, "mae": mae, "r2": r2}
+    return {"rmse": rmse, "mae": mae, "r2": r2}, all_preds, all_targets
