@@ -22,8 +22,8 @@ def test_gnn(loader, model, test_task, device):
         all_preds.append(preds)
         all_targets.append(targets)
 
-    all_preds = torch.cat(all_preds, dim=0).numpy()
-    all_targets = torch.cat(all_targets, dim=0).numpy()
+    all_preds = torch.cat(all_preds, dim=0).cpu()
+    all_targets = torch.cat(all_targets, dim=0).cpu()
 
     rmse = root_mean_squared_error(all_targets, all_preds)
     mae = mean_absolute_error(all_targets, all_preds)

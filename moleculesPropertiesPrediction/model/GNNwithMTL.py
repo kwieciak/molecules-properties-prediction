@@ -44,7 +44,7 @@ class TransformerCN(torch.nn.Module):
         self.conv3 = TransformerConv(hidden_channels * heads, hidden_channels, heads=heads, edge_dim=4)
 
         self.task_heads = ModuleDict({
-            str(i): Linear(hidden_channels, out_channels)
+            str(i): Linear(hidden_channels * heads, out_channels)
             for i in tasks
         })
 
@@ -74,7 +74,7 @@ class Gatv2CN(torch.nn.Module):
         self.conv3 = GATv2Conv(hidden_channels * heads, hidden_channels, heads=heads, edge_dim=4, concat=True)
 
         self.task_heads = ModuleDict({
-            str(i): Linear(hidden_channels, out_channels)
+            str(i): Linear(hidden_channels * heads, out_channels)
             for i in tasks
         })
 
@@ -134,7 +134,7 @@ class GIN(torch.nn.Module):
         x = self.conv3(x, edge_index)
 
         x = global_mean_pool(x, batch)
-        x = Fun.dropout(x, p=0.5, training=self.training)
+        x = Fun.dropout(x, p=0.3, training=self.training)
 
         outs = []
         for i, r_target in enumerate(r_targets):

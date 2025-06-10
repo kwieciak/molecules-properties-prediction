@@ -154,5 +154,3 @@ def plot_parity_plot(preds, targets, label):
     plt.tight_layout()
     plt.savefig(filename)
     plt.close()
-
-# TODO: funkcja do tworzenia plotu, parity plot

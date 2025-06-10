@@ -47,7 +47,7 @@ def eval_gnn(loader, model, loss_fn, device, task_weights=None):
 
 
 def train_epochs(epochs, model, train_loader, val_loader, path, device, task_weights=None):
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=5e-4)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.0005, weight_decay=5e-4)
     loss = torch.nn.MSELoss(reduction='none')
     early_stopper = EarlyStopper(patience=5, min_delta=0.05)
 
