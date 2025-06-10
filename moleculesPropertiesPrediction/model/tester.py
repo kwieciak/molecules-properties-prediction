@@ -1,20 +1,32 @@
-import numpy as np
 import torch
+from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
 
 
 @torch.no_grad()
-def test_gnn(loader, model, loss, device):
-    loss = torch.nn.MSELoss()
-    test_loss = 0
-    test_target = np.empty(0)
-    test_y_target = np.empty(0)
-    for graph in loader:
-        graph = graph.to(device)
-        out = model(graph)
-        l = loss(out, torch.reshape(graph.y.to(device), (len(graph.y), 1)))
-        test_loss += l / len(loader)
+def test_gnn(loader, model, test_task, device):
+    model.eval()
+    all_preds = []
+    all_targets = []
 
-        test_target = np.concatenate((test_target, out.detach().cpu().numpy()[:, 0]))
-        test_y_target = np.concatenate((test_y_target, graph.y.detach().cpu().numpy()))
+    for batch in loader:
+        batch = batch.to(device)
+        batch.x = batch.x.float()
+        batch.y = batch.y.float()
 
-    return test_loss, test_target, test_y_target
+        batch_size = batch.y.shape[0]
+        batch.r_target = torch.full((batch_size,), test_task, device=device)
+
+        preds = model(batch)
+        targets = batch.y[:, test_task]
+
+        all_preds.append(preds)
+        all_targets.append(targets)
+
+    all_preds = torch.cat(all_preds, dim=0).cpu()
+    all_targets = torch.cat(all_targets, dim=0).cpu()
+
+    rmse = root_mean_squared_error(all_targets, all_preds)
+    mae = mean_absolute_error(all_targets, all_preds)
+    r2 = r2_score(all_targets, all_preds)
+
+    return {"rmse": rmse, "mae": mae, "r2": r2}, all_preds, all_targets

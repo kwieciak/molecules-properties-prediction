@@ -1,14 +1,156 @@
+import csv
+import os
+from datetime import datetime
+
+import pandas as pd
 import psutil
 import torch
+from matplotlib import pyplot as plt
 
 
 def print_memory_usage():
-    ram_memory= psutil.virtual_memory()
+    ram_memory = psutil.virtual_memory()
     free_ram = ram_memory.available / (1024 ** 3)
     total_ram = ram_memory.total / (1024 ** 3)
     print(f"Free RAM: {free_ram:.2f} GB / {total_ram:.2f} GB")
+
 
 def print_gpu_memory():
     if torch.cuda.is_available():
         gpu_memory = torch.cuda.memory_allocated() / (1024 ** 3)
         print(f"VRAM usage: {gpu_memory:.2f} GB")
+
+
+def get_timestamp():
+    return datetime.now().strftime("%Y%m%d-%H%M%S")
+
+
+def ensure_results_folder():
+    os.makedirs("results", exist_ok=True)
+
+
+def save_loss_to_csv(loss_list, filename):
+    ensure_results_folder()
+    timestamp = get_timestamp()
+    filename = f"results/{filename}_{timestamp}.csv"
+    with open(filename, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(["Epoch", "Loss"])
+        for epoch, loss in enumerate(loss_list, start=1):
+            writer.writerow([epoch, loss])
+
+
+def save_metrics_to_csv(metrics_dict, filename):
+    ensure_results_folder()
+    timestamp = get_timestamp()
+    filename = f"results/{filename}_{timestamp}.csv"
+    with open(filename, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(["Metric", "Value"])
+        for metric, value in metrics_dict.items():
+            writer.writerow([metric, value])
+
+def save_preds_targets_to_csv(preds,targets,filename):
+    ensure_results_folder()
+    timestamp = get_timestamp()
+    filename = f"results/{filename}_{timestamp}.csv"
+    with open(filename, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(["Prediction", "Target"])
+        for pred, target in zip(preds, targets):
+            writer.writerow([pred, target])
+
+def load_csv(filepath):
+    return pd.read_csv(filepath)
+
+
+def load_loss_csv(filepath):
+    loss_list = []
+    with open(filepath, mode='r', newline='') as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            loss_list.append(float(row['Loss']))
+    return loss_list
+
+
+def load_metrics_csv(filepath):
+    metrics_dict = {}
+    with open(filepath, mode='r', newline='') as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            metrics_dict[row['Metric']] = float(row['Value'])
+    return metrics_dict
+
+def load_preds_targets_csv(filepath):
+    preds_list = []
+    targets_list = []
+    with open(filepath, mode='r', newline='') as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            preds_list.append(float(row['Prediction']))
+            targets_list.append(float(row['Target']))
+    return preds_list, targets_list
+
+
+def plot_metric_comparison(metrics1, metrics2, metric_name, label1, label2):
+    ensure_results_folder()
+    timestamp = get_timestamp()
+
+    values = [metrics1[metric_name], metrics2[metric_name]]
+    labels = [label1, label2]
+
+    plt.figure(figsize=(6, 5))
+    bars = plt.bar(labels, values, width=0.5)
+    plt.ylabel(metric_name.upper())
+    plt.title(f"{metric_name.upper()} comparison")
+    plt.ylim(0, max(values) * 1.2)
+    plt.grid(axis='y', linestyle='--', alpha=0.6)
+
+    for bar in bars:
+        yval = bar.get_height()
+        plt.text(bar.get_x() + bar.get_width() / 2.0, yval + 0.01, f"{yval:.4f}", ha='center', va='bottom')
+
+    filename = f"results/{metric_name}_comparison_{timestamp}.png"
+    plt.tight_layout()
+    plt.savefig(filename)
+    plt.close()
+
+def plot_learning_curve(train_loss, val_loss, label):
+    ensure_results_folder()
+    timestamp = get_timestamp()
+    epochs = list(range(1, len(train_loss) + 1))
+
+    plt.figure(figsize=(8, 5))
+    plt.plot(epochs, train_loss, label="Train Loss", linewidth=2)
+    plt.plot(epochs, val_loss, label="Validation Loss", linewidth=2)
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.title(f"Learning curve – {label}")
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.6)
+
+    filename = f"results/learning_curve_{label.replace(' ', '_').lower()}_{timestamp}.png"
+    plt.tight_layout()
+    plt.savefig(filename)
+    plt.close()
+
+def plot_parity_plot(preds, targets, label):
+    ensure_results_folder()
+    timestamp = get_timestamp()
+
+    plt.figure(figsize=(6, 6))
+    plt.scatter(targets, preds, alpha=0.6, label="Values")
+    min_val = min(min(preds), min(targets))
+    max_val = max(max(preds), max(targets))
+    plt.plot([min_val, max_val], [min_val, max_val], 'r--', label="Diagonal line")
+
+    plt.xlabel("Targets")
+    plt.ylabel("Predictions")
+    plt.title(f"Parity Plot – {label}")
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.5)
+
+    filename = f"results/parity_plot_{label.replace(' ', '_').lower()}_{timestamp}.png"
+    plt.tight_layout()
+    plt.savefig(filename)
+    plt.close()
