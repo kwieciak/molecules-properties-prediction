@@ -154,3 +154,7 @@ def plot_parity_plot(preds, targets, label):
     plt.tight_layout()
     plt.savefig(filename)
     plt.close()
+
+def print_model_details(model):
+    for name, param in model.named_parameters():
+        print(f"{name:40} | shape: {tuple(param.size())} | grad: {param.requires_grad}")
