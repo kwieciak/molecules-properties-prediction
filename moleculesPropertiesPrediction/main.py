@@ -6,7 +6,7 @@ import torch
 from data_loader.dataloader import load_dataset
 from model import GNNwithMTL, trainer, tester
 from utils.utils import get_timestamp, save_loss_to_csv, plot_parity_plot, plot_learning_curve, \
-    save_metrics_to_csv, save_preds_targets_to_csv
+    save_metrics_to_csv, save_preds_targets_to_csv, plot_metric_comparison
 
 warnings.filterwarnings("ignore")
 
@@ -16,8 +16,13 @@ timestamp = get_timestamp()
 
 # TODO: dokumentacja funkcji """ """
 
+# All hyperparameter names with “1” refer to experiments without MTL
+# All hyperparameter names with “2” refer to experiments with MTL
+
 def main():
     print(device)
+    print(timestamp)
+
     epochs = 100
     batch_size = 24
     start_index = 0
@@ -50,36 +55,42 @@ def main():
     r_targets_weights2 = None
 
     # how much of the dataset is taken for the task f.e. dataset_usage_ratio = 0.01 means that it is 1% of the entire qm9 dataset
-    dataset_usage_ratio = 0.01
+    dataset_usage_ratio1 = 0.001
+    dataset_usage_ratio2 = 0.1
 
     # train, val, test subsets proportion f.e. train_ration=0.7 means that it is 70% of the loaded dataset
-    train_ratio = 0.7
-    val_ratio = 0.1
-    test_ratio = 0.2
+    train_ratio1 = 0.7
+    val_ratio1 = 0.1
+    test_ratio1 = 0.2
+    train_ratio2 = 0.7
+    val_ratio2 = 0.1
+    test_ratio2 = 0.2
 
-    train_loader1, val_loader1, test_loader1 = load_dataset(batch_size, train_ratio, val_ratio, test_ratio,
-                                                            train_r_targets1, device, dataset_usage_ratio,
+    train_loader1, val_loader1, test_loader1 = load_dataset(batch_size, train_ratio1, val_ratio1, test_ratio1,
+                                                            train_r_targets1, device, dataset_usage_ratio1,
                                                             start_index)
-    train_loader2, val_loader2, test_loader2 = load_dataset(batch_size, train_ratio, val_ratio, test_ratio,
-                                                            train_r_targets2, device, dataset_usage_ratio,
+    train_loader2, val_loader2, test_loader2 = load_dataset(batch_size, train_ratio2, val_ratio2, test_ratio2,
+                                                            train_r_targets2, device, dataset_usage_ratio2,
                                                             start_index)
 
     # you can choose models: gin, gatv2cn, transformercn, gcn
     model1 = GNNwithMTL.GIN(11, 64, r_targets1).to(device)
     model2 = GNNwithMTL.TransformerCN(11, 64, r_targets2).to(device)
 
-    optimizer = torch.optim.Adam(model2.parameters(), lr=0.0005, weight_decay=5e-4)
-    loss_fn = torch.nn.MSELoss(reduction='none')
+    optimizer1 = torch.optim.Adam(model1.parameters(), lr=0.0005, weight_decay=5e-4)
+    loss_fn1 = torch.nn.MSELoss(reduction='none')
+    optimizer2 = torch.optim.Adam(model2.parameters(), lr=0.0005, weight_decay=5e-4)
+    loss_fn2 = torch.nn.MSELoss(reduction='none')
 
-    # print(f'Dla batch = {batch_size}')
-    # start = time.time()
-    # gnn_train_loss1, gnn_val_loss1 = trainer.train_epochs(epochs, model1,
-    #                                                       train_loader1,
-    #                                                       val_loader1,
-    #                                                       "GNN1.pt",
-    #                                                       device, optimizer, loss_fn, r_targets_weights1)
-    # end = time.time()
-    # print(f"Time = {end - start}")
+    print(f'Dla batch = {batch_size}')
+    start = time.time()
+    gnn_train_loss1, gnn_val_loss1 = trainer.train_epochs(epochs, model1,
+                                                          train_loader1,
+                                                          val_loader1,
+                                                          "GNN1.pt",
+                                                          device, optimizer1, loss_fn1, timestamp, r_targets_weights1)
+    end = time.time()
+    print(f"Time = {end - start}")
 
     print(f'Dla batch = {batch_size}')
     start = time.time()
@@ -87,7 +98,7 @@ def main():
                                                           train_loader2,
                                                           val_loader2,
                                                           f"GNN2.pt",
-                                                          device, optimizer, loss_fn, timestamp, r_targets_weights2)
+                                                          device, optimizer2, loss_fn2, timestamp, r_targets_weights2)
     end = time.time()
     print(f"Time = {end - start}")
 
@@ -97,55 +108,60 @@ def main():
     val_ratio_ft = 0.05
     test_ratio_ft = 0.83
     train_r_targets_ft = [11]
+    dataset_usage_ratio_ft = 0.002
 
     train_loader_ft, val_loader_ft, test_loader_ft = load_dataset(batch_size, train_ratio_ft, val_ratio_ft,
                                                                   test_ratio_ft, train_r_targets_ft, device,
-                                                                  0.002, 14080)
+                                                                  dataset_usage_ratio_ft, 14080)
 
     optimizer_ft = torch.optim.Adam(filter(lambda p: p.requires_grad, model2.parameters()), lr=0.0005,
                                     weight_decay=5e-4)
 
+    print(f'Dla batch = {batch_size}')
+    start = time.time()
     gnn_train_loss_ft, gnn_val_loss_ft = trainer.train_epochs(epochs, model2,
                                                               train_loader_ft,
                                                               val_loader_ft,
                                                               f"GNN2FT.pt",
-                                                              device, optimizer_ft, loss_fn, timestamp,
+                                                              device, optimizer_ft, loss_fn2, timestamp,
                                                               r_targets_weights2)
+    end = time.time()
+    print(f"Time = {end - start}")
 
     # Metrics
-    # metrics1, preds1, targets1 = tester.test_gnn(test_loader1, model1, test_r_target1, device)
-    # print(f"Test without MTL RMSE: {metrics1['rmse']:.4f}, MAE: {metrics1['mae']:.4f}, R2: {metrics1['r2']:.4f}")
+    metrics1, preds1, targets1 = tester.test_gnn(test_loader1, model1, test_r_target1, device)
+    print(f"Test without MTL RMSE: {metrics1['rmse']:.4f}, MAE: {metrics1['mae']:.4f}, R2: {metrics1['r2']:.4f}")
     metrics2, preds2, targets2 = tester.test_gnn(test_loader_ft, model2, test_r_target2, device)
     print(f"Test with MTL RMSE: {metrics2['rmse']:.4f}, MAE: {metrics2['mae']:.4f}, R2: {metrics2['r2']:.4f}")
 
     # Metrics comparison
-    # plot_metric_comparison(metrics1, metrics2, "r2", "experiment without MTL", "experiment with MTL", timestamp)
-    # plot_metric_comparison(metrics1, metrics2, "rmse", "experiment without MTL", "experiment with MTL", timestamp)
-    # plot_metric_comparison(metrics1, metrics2, "mae", "experiment without MTL", "experiment with MTL", timestamp)
+    plot_metric_comparison(metrics1, metrics2, "r2", "experiment without MTL", "experiment with MTL", timestamp)
+    plot_metric_comparison(metrics1, metrics2, "rmse", "experiment without MTL", "experiment with MTL", timestamp)
+    plot_metric_comparison(metrics1, metrics2, "mae", "experiment without MTL", "experiment with MTL", timestamp)
 
     # Learning curve
-    # plot_learning_curve(gin_train_loss1, gin_val_loss1, "gin, experiment without MTL", timestamp)
+    plot_learning_curve(gnn_train_loss1, gnn_val_loss1, "gin, experiment without MTL", timestamp)
     plot_learning_curve(gnn_train_loss2, gnn_val_loss2, "transformercn, experiment with MTL", timestamp)
     plot_learning_curve(gnn_train_loss_ft, gnn_val_loss_ft, "transformercn, experiment with MTL FT", timestamp)
 
     # Parity plot
-    # plot_parity_plot(preds1, targets1, "gin, experiment without MTL", timestamp)
+    plot_parity_plot(preds1, targets1, "gin, experiment without MTL", timestamp)
     plot_parity_plot(preds2, targets2, "transformercn, experiment with MTL", timestamp)
 
     # Losses csv
-    # save_loss_to_csv(gnn_train_loss1, "gnn_train_loss_without_mtl.csv", timestamp)
-    # save_loss_to_csv(gnn_val_loss1, "gnn_val_loss_without_mtl.csv", timestamp)
+    save_loss_to_csv(gnn_train_loss1, "gnn_train_loss_without_mtl.csv", timestamp)
+    save_loss_to_csv(gnn_val_loss1, "gnn_val_loss_without_mtl.csv", timestamp)
     save_loss_to_csv(gnn_train_loss2, "gnn_train_loss_with_mtl.csv", timestamp)
     save_loss_to_csv(gnn_val_loss2, "gnn_val_loss_with_mtl.csv", timestamp)
     save_loss_to_csv(gnn_train_loss_ft, "gnn_train_loss_with_mtl_ft.csv", timestamp)
     save_loss_to_csv(gnn_val_loss_ft, "gnn_val_loss_with_mtl_ft.csv", timestamp)
 
     # Metrics csv
-    # save_metrics_to_csv(metrics1, "metrics_without_mtl.csv", timestamp)
+    save_metrics_to_csv(metrics1, "metrics_without_mtl.csv", timestamp)
     save_metrics_to_csv(metrics2, "metrics_with_mtl_ft.csv", timestamp)
 
     # PredsTargets csv
-    # save_preds_targets_to_csv(preds1, targets1, "preds_targets_without_mtl.csv", timestamp)
+    save_preds_targets_to_csv(preds1, targets1, "preds_targets_without_mtl.csv", timestamp)
     save_preds_targets_to_csv(preds2, targets2, "preds_targets_with_mtl.csv", timestamp)
 
     return
