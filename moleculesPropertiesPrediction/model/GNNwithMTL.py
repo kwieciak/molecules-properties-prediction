@@ -143,4 +143,4 @@ class GIN(torch.nn.Module):
 
         return torch.cat(outs, dim=0).squeeze(-1)
 
-#TODO: DRY - pull all the common logic into one “base” class, and in individual models pass only what changes
+# TODO: DRY - pull all the common logic into one “base” class, and in individual models pass only what changes

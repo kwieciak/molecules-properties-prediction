@@ -1,6 +1,7 @@
 import torch
 
 from utils.earlystopper import EarlyStopper
+from utils.utils import ensure_folder
 
 
 def train_gnn(loader, model, loss_fn, optimizer, device, task_weights=None):
@@ -46,7 +47,9 @@ def eval_gnn(loader, model, loss_fn, device, task_weights=None):
     return total_loss / len(loader)
 
 
-def train_epochs(epochs, model, train_loader, val_loader, path, device, optimizer, loss_fn, task_weights=None):
+def train_epochs(epochs, model, train_loader, val_loader, filename, device, optimizer, loss_fn, timestamp,
+                 task_weights=None):
+    ensure_folder(f"results/{timestamp}/saved_models")
     early_stopper = EarlyStopper(patience=5, min_delta=0.05)
 
     train_losses, val_losses = [], []
@@ -62,8 +65,9 @@ def train_epochs(epochs, model, train_loader, val_loader, path, device, optimize
         print(f"[Epoch {epoch}] train_loss={train_loss:.4f}, val_loss={val_loss:.4f}")
 
         if val_loss < best_val:
+            save_path = f"results/{timestamp}/saved_models/{filename}"
             best_val = val_loss
-            torch.save(model.state_dict(), path)
+            torch.save(model.state_dict(), save_path)
 
         if early_stopper.early_stop(val_loss):
             print("Early stopping")
@@ -71,17 +75,20 @@ def train_epochs(epochs, model, train_loader, val_loader, path, device, optimize
 
     return train_losses, val_losses
 
+
 def freeze_layers(model, prefix_list):
     for name, module in model.named_modules():
         if any(name.startswith(prefix) for prefix in prefix_list):
             for param in module.parameters():
                 param.requires_grad = False
 
+
 def unfreeze_layers(model, prefix_list):
     for name, module in model.named_modules():
         if any(name.startswith(prefix) for prefix in prefix_list):
             for param in module.parameters():
                 param.requires_grad = True
+
 
 def freeze_features(model, exceptions_list):
     for param in model.parameters():
@@ -93,9 +100,11 @@ def freeze_features(model, exceptions_list):
             for param in model.task_heads[exception_str].parameters():
                 param.requires_grad = True
 
+
 def unfreeze_features(model):
     for param in model.parameters():
         param.requires_grad = True
+
 
 def _prepare_preds_and_targets(batch, model, device):
     batch = batch.to(device)

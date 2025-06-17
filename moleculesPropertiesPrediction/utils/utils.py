@@ -22,17 +22,16 @@ def print_gpu_memory():
 
 
 def get_timestamp():
-    return datetime.now().strftime("%Y%m%d-%H%M%S")
+    return datetime.now().strftime("%Y%m%d-%H%M")
 
 
-def ensure_results_folder():
-    os.makedirs("results", exist_ok=True)
+def ensure_folder(folder):
+    os.makedirs(folder, exist_ok=True)
 
 
-def save_loss_to_csv(loss_list, filename):
-    ensure_results_folder()
-    timestamp = get_timestamp()
-    filename = f"results/{filename}_{timestamp}.csv"
+def save_loss_to_csv(loss_list, filename, timestamp):
+    ensure_folder(f"results/{timestamp}/csv/loss")
+    filename = f"results/{timestamp}/csv/loss/{filename}.csv"
     with open(filename, mode='w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(["Epoch", "Loss"])
@@ -40,25 +39,25 @@ def save_loss_to_csv(loss_list, filename):
             writer.writerow([epoch, loss])
 
 
-def save_metrics_to_csv(metrics_dict, filename):
-    ensure_results_folder()
-    timestamp = get_timestamp()
-    filename = f"results/{filename}_{timestamp}.csv"
+def save_metrics_to_csv(metrics_dict, filename, timestamp):
+    ensure_folder(f"results/{timestamp}/csv/metrics")
+    filename = f"results/{timestamp}/csv/metrics/{filename}.csv"
     with open(filename, mode='w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(["Metric", "Value"])
         for metric, value in metrics_dict.items():
             writer.writerow([metric, value])
 
-def save_preds_targets_to_csv(preds,targets,filename):
-    ensure_results_folder()
-    timestamp = get_timestamp()
-    filename = f"results/{filename}_{timestamp}.csv"
+
+def save_preds_targets_to_csv(preds, targets, filename, timestamp):
+    ensure_folder(f"results/{timestamp}/csv/predstargets")
+    filename = f"results/{timestamp}/csv/predstargets/{filename}.csv"
     with open(filename, mode='w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(["Prediction", "Target"])
         for pred, target in zip(preds, targets):
             writer.writerow([pred, target])
+
 
 def load_csv(filepath):
     return pd.read_csv(filepath)
@@ -81,6 +80,7 @@ def load_metrics_csv(filepath):
             metrics_dict[row['Metric']] = float(row['Value'])
     return metrics_dict
 
+
 def load_preds_targets_csv(filepath):
     preds_list = []
     targets_list = []
@@ -92,9 +92,8 @@ def load_preds_targets_csv(filepath):
     return preds_list, targets_list
 
 
-def plot_metric_comparison(metrics1, metrics2, metric_name, label1, label2):
-    ensure_results_folder()
-    timestamp = get_timestamp()
+def plot_metric_comparison(metrics1, metrics2, metric_name, label1, label2, timestamp):
+    ensure_folder(f"results/{timestamp}/plots/metrics")
 
     values = [metrics1[metric_name], metrics2[metric_name]]
     labels = [label1, label2]
@@ -110,14 +109,14 @@ def plot_metric_comparison(metrics1, metrics2, metric_name, label1, label2):
         yval = bar.get_height()
         plt.text(bar.get_x() + bar.get_width() / 2.0, yval + 0.01, f"{yval:.4f}", ha='center', va='bottom')
 
-    filename = f"results/{metric_name}_comparison_{timestamp}.png"
+    filename = f"results/{timestamp}/plots/metrics/{metric_name}_comparison.png"
     plt.tight_layout()
     plt.savefig(filename)
     plt.close()
 
-def plot_learning_curve(train_loss, val_loss, label):
-    ensure_results_folder()
-    timestamp = get_timestamp()
+
+def plot_learning_curve(train_loss, val_loss, label, timestamp):
+    ensure_folder(f"results/{timestamp}/plots/lc")
     epochs = list(range(1, len(train_loss) + 1))
 
     plt.figure(figsize=(8, 5))
@@ -129,14 +128,14 @@ def plot_learning_curve(train_loss, val_loss, label):
     plt.legend()
     plt.grid(True, linestyle='--', alpha=0.6)
 
-    filename = f"results/learning_curve_{label.replace(' ', '_').lower()}_{timestamp}.png"
+    filename = f"results/{timestamp}/plots/lc/learning_curve_{label.replace(' ', '_').lower()}.png"
     plt.tight_layout()
     plt.savefig(filename)
     plt.close()
 
-def plot_parity_plot(preds, targets, label):
-    ensure_results_folder()
-    timestamp = get_timestamp()
+
+def plot_parity_plot(preds, targets, label, timestamp):
+    ensure_folder(f"results/{timestamp}/plots/parity")
 
     plt.figure(figsize=(6, 6))
     plt.scatter(targets, preds, alpha=0.6, label="Values")
@@ -150,10 +149,11 @@ def plot_parity_plot(preds, targets, label):
     plt.legend()
     plt.grid(True, linestyle='--', alpha=0.5)
 
-    filename = f"results/parity_plot_{label.replace(' ', '_').lower()}_{timestamp}.png"
+    filename = f"results/{timestamp}/plots/parity/parity_plot_{label.replace(' ', '_').lower()}.png"
     plt.tight_layout()
     plt.savefig(filename)
     plt.close()
+
 
 def print_model_details(model):
     for name, param in model.named_parameters():
