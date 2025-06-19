@@ -1,5 +1,6 @@
 import torch
 
+from config import timestamp
 from utils.earlystopper import EarlyStopper
 from utils.utils import ensure_folder
 
@@ -47,7 +48,7 @@ def eval_gnn(loader, model, loss_fn, device, task_weights=None):
     return total_loss / len(loader)
 
 
-def train_epochs(epochs, model, train_loader, val_loader, filename, device, optimizer, loss_fn, timestamp,
+def train_epochs(epochs, model, train_loader, val_loader, filename, device, optimizer, loss_fn,
                  task_weights=None):
     ensure_folder(f"results/{timestamp}/saved_models")
     early_stopper = EarlyStopper(patience=5, min_delta=0.05)

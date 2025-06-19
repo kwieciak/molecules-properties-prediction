@@ -1,17 +1,17 @@
 import time
 import warnings
-
 import torch
 
+import utils.utils
+from config import timestamp
 from data_loader.dataloader import load_dataset
 from model import GNNwithMTL, trainer, tester
-from utils.utils import get_timestamp, save_loss_to_csv, plot_parity_plot, plot_learning_curve, \
+from utils.utils import save_loss_to_csv, plot_parity_plot, plot_learning_curve, \
     save_metrics_to_csv, save_preds_targets_to_csv, plot_metric_comparison
 
 warnings.filterwarnings("ignore")
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-timestamp = get_timestamp()
 
 
 # TODO: dokumentacja funkcji """ """
@@ -22,14 +22,13 @@ timestamp = get_timestamp()
 def main():
     print(device)
     print(timestamp)
-
     epochs = 100
     batch_size = 24
     start_index = 0
 
     # qm9 targets:
     # 0 - dipole moment                                   10 - Free energy at 298.15K
-    # 1 - isotropic polarizability                        11 - Heat capavity at 298.15K
+    # 1 - isotropic polarizability                        11 - Heat capacity at 298.15K
     # 2 - Highest occupied molecular orbital energy       12 - Atomization energy at 0K
     # 3 - Lowest unoccupied molecular orbital energy      13 - Atomization energy at 298.15K
     # 4 - Gap between 2 and 3                             14 - Atomization enthalpy at 298.15K
@@ -56,7 +55,7 @@ def main():
 
     # how much of the dataset is taken for the task f.e. dataset_usage_ratio = 0.01 means that it is 1% of the entire qm9 dataset
     dataset_usage_ratio1 = 0.001
-    dataset_usage_ratio2 = 0.1
+    dataset_usage_ratio2 = 0.001
 
     # train, val, test subsets proportion f.e. train_ration=0.7 means that it is 70% of the loaded dataset
     train_ratio1 = 0.7
@@ -88,7 +87,7 @@ def main():
                                                           train_loader1,
                                                           val_loader1,
                                                           "GNN1.pt",
-                                                          device, optimizer1, loss_fn1, timestamp, r_targets_weights1)
+                                                          device, optimizer1, loss_fn1, r_targets_weights1)
     end = time.time()
     print(f"Time = {end - start}")
 
@@ -98,7 +97,7 @@ def main():
                                                           train_loader2,
                                                           val_loader2,
                                                           f"GNN2.pt",
-                                                          device, optimizer2, loss_fn2, timestamp, r_targets_weights2)
+                                                          device, optimizer2, loss_fn2, r_targets_weights2)
     end = time.time()
     print(f"Time = {end - start}")
 
@@ -123,7 +122,7 @@ def main():
                                                               train_loader_ft,
                                                               val_loader_ft,
                                                               f"GNN2FT.pt",
-                                                              device, optimizer_ft, loss_fn2, timestamp,
+                                                              device, optimizer_ft, loss_fn2,
                                                               r_targets_weights2)
     end = time.time()
     print(f"Time = {end - start}")
@@ -135,34 +134,34 @@ def main():
     print(f"Test with MTL RMSE: {metrics2['rmse']:.4f}, MAE: {metrics2['mae']:.4f}, R2: {metrics2['r2']:.4f}")
 
     # Metrics comparison
-    plot_metric_comparison(metrics1, metrics2, "r2", "experiment without MTL", "experiment with MTL", timestamp)
-    plot_metric_comparison(metrics1, metrics2, "rmse", "experiment without MTL", "experiment with MTL", timestamp)
-    plot_metric_comparison(metrics1, metrics2, "mae", "experiment without MTL", "experiment with MTL", timestamp)
+    plot_metric_comparison(metrics1, metrics2, "r2", "experiment without MTL", "experiment with MTL")
+    plot_metric_comparison(metrics1, metrics2, "rmse", "experiment without MTL", "experiment with MTL")
+    plot_metric_comparison(metrics1, metrics2, "mae", "experiment without MTL", "experiment with MTL")
 
     # Learning curve
-    plot_learning_curve(gnn_train_loss1, gnn_val_loss1, "gin, experiment without MTL", timestamp)
-    plot_learning_curve(gnn_train_loss2, gnn_val_loss2, "transformercn, experiment with MTL", timestamp)
-    plot_learning_curve(gnn_train_loss_ft, gnn_val_loss_ft, "transformercn, experiment with MTL FT", timestamp)
+    plot_learning_curve(gnn_train_loss1, gnn_val_loss1, "gin, experiment without MTL")
+    plot_learning_curve(gnn_train_loss2, gnn_val_loss2, "transformercn, experiment with MTL")
+    plot_learning_curve(gnn_train_loss_ft, gnn_val_loss_ft, "transformercn, experiment with MTL FT")
 
     # Parity plot
-    plot_parity_plot(preds1, targets1, "gin, experiment without MTL", timestamp)
-    plot_parity_plot(preds2, targets2, "transformercn, experiment with MTL", timestamp)
+    plot_parity_plot(preds1, targets1, "gin, experiment without MTL")
+    plot_parity_plot(preds2, targets2, "transformercn, experiment with MTL")
 
     # Losses csv
-    save_loss_to_csv(gnn_train_loss1, "gnn_train_loss_without_mtl.csv", timestamp)
-    save_loss_to_csv(gnn_val_loss1, "gnn_val_loss_without_mtl.csv", timestamp)
-    save_loss_to_csv(gnn_train_loss2, "gnn_train_loss_with_mtl.csv", timestamp)
-    save_loss_to_csv(gnn_val_loss2, "gnn_val_loss_with_mtl.csv", timestamp)
-    save_loss_to_csv(gnn_train_loss_ft, "gnn_train_loss_with_mtl_ft.csv", timestamp)
-    save_loss_to_csv(gnn_val_loss_ft, "gnn_val_loss_with_mtl_ft.csv", timestamp)
+    save_loss_to_csv(gnn_train_loss1, "gnn_train_loss_without_mtl.csv")
+    save_loss_to_csv(gnn_val_loss1, "gnn_val_loss_without_mtl.csv")
+    save_loss_to_csv(gnn_train_loss2, "gnn_train_loss_with_mtl.csv")
+    save_loss_to_csv(gnn_val_loss2, "gnn_val_loss_with_mtl.csv")
+    save_loss_to_csv(gnn_train_loss_ft, "gnn_train_loss_with_mtl_ft.csv")
+    save_loss_to_csv(gnn_val_loss_ft, "gnn_val_loss_with_mtl_ft.csv")
 
     # Metrics csv
-    save_metrics_to_csv(metrics1, "metrics_without_mtl.csv", timestamp)
-    save_metrics_to_csv(metrics2, "metrics_with_mtl_ft.csv", timestamp)
+    save_metrics_to_csv(metrics1, "metrics_without_mtl.csv")
+    save_metrics_to_csv(metrics2, "metrics_with_mtl_ft.csv")
 
     # PredsTargets csv
-    save_preds_targets_to_csv(preds1, targets1, "preds_targets_without_mtl.csv", timestamp)
-    save_preds_targets_to_csv(preds2, targets2, "preds_targets_with_mtl.csv", timestamp)
+    save_preds_targets_to_csv(preds1, targets1, "preds_targets_without_mtl.csv")
+    save_preds_targets_to_csv(preds2, targets2, "preds_targets_with_mtl.csv")
 
     return
 

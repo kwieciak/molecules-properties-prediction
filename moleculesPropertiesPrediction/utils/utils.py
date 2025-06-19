@@ -1,11 +1,11 @@
 import csv
 import os
-from datetime import datetime
 
 import pandas as pd
 import psutil
 import torch
 from matplotlib import pyplot as plt
+from config import timestamp
 
 
 def print_memory_usage():
@@ -21,15 +21,11 @@ def print_gpu_memory():
         print(f"VRAM usage: {gpu_memory:.2f} GB")
 
 
-def get_timestamp():
-    return datetime.now().strftime("%Y%m%d-%H%M")
-
-
 def ensure_folder(folder):
     os.makedirs(folder, exist_ok=True)
 
 
-def save_loss_to_csv(loss_list, filename, timestamp):
+def save_loss_to_csv(loss_list, filename):
     ensure_folder(f"results/{timestamp}/csv/loss")
     filename = f"results/{timestamp}/csv/loss/{filename}.csv"
     with open(filename, mode='w', newline='') as file:
@@ -39,7 +35,7 @@ def save_loss_to_csv(loss_list, filename, timestamp):
             writer.writerow([epoch, loss])
 
 
-def save_metrics_to_csv(metrics_dict, filename, timestamp):
+def save_metrics_to_csv(metrics_dict, filename):
     ensure_folder(f"results/{timestamp}/csv/metrics")
     filename = f"results/{timestamp}/csv/metrics/{filename}.csv"
     with open(filename, mode='w', newline='') as file:
@@ -49,7 +45,7 @@ def save_metrics_to_csv(metrics_dict, filename, timestamp):
             writer.writerow([metric, value])
 
 
-def save_preds_targets_to_csv(preds, targets, filename, timestamp):
+def save_preds_targets_to_csv(preds, targets, filename):
     ensure_folder(f"results/{timestamp}/csv/predstargets")
     filename = f"results/{timestamp}/csv/predstargets/{filename}.csv"
     with open(filename, mode='w', newline='') as file:
@@ -58,6 +54,15 @@ def save_preds_targets_to_csv(preds, targets, filename, timestamp):
         for pred, target in zip(preds, targets):
             writer.writerow([pred, target])
 
+def save_r_targets_to_csv(r_targets, filename):
+    ensure_folder(f"results/{timestamp}/csv/r_targets")
+    filename = f"results/{timestamp}/csv/r_targets/{filename}.csv"
+    r_target_list = r_targets.tolist()
+    with open(filename, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(["r_target"])
+        for value in r_target_list:
+            writer.writerow([value])
 
 def load_csv(filepath):
     return pd.read_csv(filepath)
@@ -91,8 +96,15 @@ def load_preds_targets_csv(filepath):
             targets_list.append(float(row['Target']))
     return preds_list, targets_list
 
+def load_r_targets_csv(filepath):
+    r_targets_list = []
+    with open(filepath, mode='r', newline='') as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            r_targets_list.append(int(row['r_target']))
+    return r_targets_list
 
-def plot_metric_comparison(metrics1, metrics2, metric_name, label1, label2, timestamp):
+def plot_metric_comparison(metrics1, metrics2, metric_name, label1, label2):
     ensure_folder(f"results/{timestamp}/plots/metrics")
 
     values = [metrics1[metric_name], metrics2[metric_name]]
@@ -115,7 +127,7 @@ def plot_metric_comparison(metrics1, metrics2, metric_name, label1, label2, time
     plt.close()
 
 
-def plot_learning_curve(train_loss, val_loss, label, timestamp):
+def plot_learning_curve(train_loss, val_loss, label):
     ensure_folder(f"results/{timestamp}/plots/lc")
     epochs = list(range(1, len(train_loss) + 1))
 
@@ -134,7 +146,7 @@ def plot_learning_curve(train_loss, val_loss, label, timestamp):
     plt.close()
 
 
-def plot_parity_plot(preds, targets, label, timestamp):
+def plot_parity_plot(preds, targets, label):
     ensure_folder(f"results/{timestamp}/plots/parity")
 
     plt.figure(figsize=(6, 6))

@@ -2,13 +2,17 @@ from sklearn.model_selection import train_test_split
 from torch_geometric.loader import DataLoader
 
 from data_loader.CustomQM9 import CustomQM9
+from utils.utils import save_r_targets_to_csv
 
 
 def load_dataset(batch_size, train_ratio, val_ratio, test_ratio, train_r_targets, device, dataset_usage_ratio=1.0,
-                 start_index=0,
+                 start_index=0, assign_loaded_targets = False,
                  shuffling=False):
     dataset_path = "./data"
-    dataset = CustomQM9(root=dataset_path, train_r_targets=train_r_targets)
+    dataset = CustomQM9(dataset_path, train_r_targets, assign_loaded_targets)
+
+    filename = "r_targets_" + str(train_r_targets)[:20]
+    save_r_targets_to_csv(dataset.r_target, filename)
 
     # splitting the data
     num_samples = int(len(dataset) * dataset_usage_ratio)
