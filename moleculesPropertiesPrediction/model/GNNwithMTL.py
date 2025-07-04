@@ -134,7 +134,7 @@ class GIN(torch.nn.Module):
         x = self.conv3(x, edge_index)
 
         x = global_mean_pool(x, batch)
-        x = Fun.dropout(x, p=0.3, training=self.training)
+        x = Fun.dropout(x, p=0.5, training=self.training)
 
         outs = []
         for i, r_target in enumerate(r_targets):
@@ -143,4 +143,4 @@ class GIN(torch.nn.Module):
 
         return torch.cat(outs, dim=0).squeeze(-1)
 
-#TODO: DRY - pull all the common logic into one “base” class, and in individual models pass only what changes
+# TODO: DRY - pull all the common logic into one “base” class, and in individual models pass only what changes

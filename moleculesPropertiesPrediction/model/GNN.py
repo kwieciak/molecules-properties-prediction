@@ -1,7 +1,7 @@
 import torch
-from torch_geometric.nn import GCNConv, TransformerConv, GATv2Conv, GINConv,  global_mean_pool, global_add_pool
-from torch.nn import Sequential, Linear, ReLU, BatchNorm1d
 import torch.nn.functional as Fun
+from torch.nn import Sequential, Linear, ReLU, BatchNorm1d
+from torch_geometric.nn import GCNConv, TransformerConv, GATv2Conv, GINConv, global_mean_pool, global_add_pool
 
 
 class GCN(torch.nn.Module):
@@ -28,6 +28,7 @@ class GCN(torch.nn.Module):
 
         return x
 
+
 class TransformerCN(torch.nn.Module):
     def __init__(self, in_channels, hidden_channels, out_channels=1, heads=4):
         super().__init__()
@@ -51,6 +52,7 @@ class TransformerCN(torch.nn.Module):
         x = self.lin(x)
 
         return x
+
 
 class Gatv2CN(torch.nn.Module):
     def __init__(self, in_channels, hidden_channels, out_channels=1, heads=4):
