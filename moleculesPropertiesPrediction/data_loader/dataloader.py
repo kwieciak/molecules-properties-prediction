@@ -10,7 +10,6 @@ def load_dataset(batch_size, train_ratio, val_ratio, test_ratio, train_r_targets
                  shuffling=False):
     dataset_path = "./data"
     dataset = CustomQM9(dataset_path, train_r_targets, assign_loaded_targets)
-
     filename = "r_targets_" + str(train_r_targets)[:20]
     save_r_targets_to_csv(dataset.r_target, filename)
 

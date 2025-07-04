@@ -21,10 +21,9 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def main():
     print(device)
-    print(timestamp)
     epochs = 100
-    batch_size = 24
-    start_index = 0
+    batch_size = 16
+    start_index = 31254
 
     # qm9 targets:
     # 0 - dipole moment                                   10 - Free energy at 298.15K
@@ -39,12 +38,12 @@ def main():
     # 9 - Enthalpy at 298.15K
 
     # regression targets (tasks) selected to train the model
-    train_r_targets1 = [11]
-    train_r_targets2 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16, 17, 18]
+    train_r_targets1 = [9]
+    train_r_targets2 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18]
 
     # regression target (task) selected for model testing
-    test_r_target1 = 11
-    test_r_target2 = 11
+    test_r_target1 = 9
+    test_r_target2 = 9
 
     # merged lists to create the appropriate number of final_linear_layers in the model
     r_targets1 = train_r_targets1 + ([test_r_target1] if test_r_target1 not in train_r_targets1 else [])
@@ -54,31 +53,32 @@ def main():
     r_targets_weights2 = None
 
     # how much of the dataset is taken for the task f.e. dataset_usage_ratio = 0.01 means that it is 1% of the entire qm9 dataset
-    dataset_usage_ratio1 = 0.001
-    dataset_usage_ratio2 = 0.001
+    dataset_usage_ratio1 = 0.0009
+    dataset_usage_ratio2 = 0.75
 
     # train, val, test subsets proportion f.e. train_ration=0.7 means that it is 70% of the loaded dataset
-    train_ratio1 = 0.7
-    val_ratio1 = 0.1
-    test_ratio1 = 0.2
+    train_ratio1 = 0.2
+    val_ratio1 = 0.05
+    test_ratio1 = 0.75
     train_ratio2 = 0.7
     val_ratio2 = 0.1
     test_ratio2 = 0.2
 
     train_loader1, val_loader1, test_loader1 = load_dataset(batch_size, train_ratio1, val_ratio1, test_ratio1,
                                                             train_r_targets1, device, dataset_usage_ratio1,
-                                                            start_index)
+                                                            21241)
     train_loader2, val_loader2, test_loader2 = load_dataset(batch_size, train_ratio2, val_ratio2, test_ratio2,
                                                             train_r_targets2, device, dataset_usage_ratio2,
                                                             start_index)
+    print(len(train_loader1.dataset), len(val_loader1.dataset), len(test_loader1.dataset))
 
     # you can choose models: gin, gatv2cn, transformercn, gcn
-    model1 = GNNwithMTL.GIN(11, 64, r_targets1).to(device)
+    model1 = GNNwithMTL.TransformerCN(11, 64, r_targets1).to(device)
     model2 = GNNwithMTL.TransformerCN(11, 64, r_targets2).to(device)
 
-    optimizer1 = torch.optim.Adam(model1.parameters(), lr=0.0005, weight_decay=5e-4)
+    optimizer1 = torch.optim.Adam(model1.parameters(), lr=0.0001, weight_decay=0.1)
     loss_fn1 = torch.nn.MSELoss(reduction='none')
-    optimizer2 = torch.optim.Adam(model2.parameters(), lr=0.0005, weight_decay=5e-4)
+    optimizer2 = torch.optim.Adam(model2.parameters(), lr=0.0001, weight_decay=0.01)
     loss_fn2 = torch.nn.MSELoss(reduction='none')
 
     print(f'Dla batch = {batch_size}')
@@ -103,18 +103,18 @@ def main():
 
     trainer.freeze_layers(model2, ['conv'])
 
-    train_ratio_ft = 0.12
+    train_ratio_ft = 0.2
     val_ratio_ft = 0.05
-    test_ratio_ft = 0.83
-    train_r_targets_ft = [11]
-    dataset_usage_ratio_ft = 0.002
+    test_ratio_ft = 0.75
+    train_r_targets_ft = [9]
+    dataset_usage_ratio_ft = 0.0009
 
     train_loader_ft, val_loader_ft, test_loader_ft = load_dataset(batch_size, train_ratio_ft, val_ratio_ft,
                                                                   test_ratio_ft, train_r_targets_ft, device,
-                                                                  dataset_usage_ratio_ft, 14080)
+                                                                  dataset_usage_ratio_ft, 21241)
 
-    optimizer_ft = torch.optim.Adam(filter(lambda p: p.requires_grad, model2.parameters()), lr=0.0005,
-                                    weight_decay=5e-4)
+    optimizer_ft = torch.optim.Adam(filter(lambda p: p.requires_grad, model2.parameters()), lr=0.0001,
+                                    weight_decay=0.1)
 
     print(f'Dla batch = {batch_size}')
     start = time.time()
@@ -132,6 +132,7 @@ def main():
     print(f"Test without MTL RMSE: {metrics1['rmse']:.4f}, MAE: {metrics1['mae']:.4f}, R2: {metrics1['r2']:.4f}")
     metrics2, preds2, targets2 = tester.test_gnn(test_loader_ft, model2, test_r_target2, device)
     print(f"Test with MTL RMSE: {metrics2['rmse']:.4f}, MAE: {metrics2['mae']:.4f}, R2: {metrics2['r2']:.4f}")
+    print(timestamp)
 
     # Metrics comparison
     plot_metric_comparison(metrics1, metrics2, "r2", "experiment without MTL", "experiment with MTL")
