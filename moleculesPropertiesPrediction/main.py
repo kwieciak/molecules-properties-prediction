@@ -21,7 +21,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def main():
     print(device)
-    epochs = 100
+    epochs = 200
     batch_size1 = 8
     batch_size2 = 16
     start_index = 31254
