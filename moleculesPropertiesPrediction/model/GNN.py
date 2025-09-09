@@ -47,7 +47,7 @@ class TransformerCN(torch.nn.Module):
         x = self.conv3(x, edge_index, edge_attr=edge_attr)
 
         x = global_mean_pool(x, batch)
-        x = Fun.dropout(x, p=0.5, training=self.training)
+        x = Fun.dropout(x, p=0.35, training=self.training)
 
         x = self.lin(x)
 
@@ -72,7 +72,7 @@ class Gatv2CN(torch.nn.Module):
         x = self.conv3(x, edge_index, edge_attr=edge_attr)
 
         x = global_mean_pool(x, batch)
-        x = Fun.dropout(x, p=0.5, training=self.training)
+        x = Fun.dropout(x, p=0.35, training=self.training)
 
         x = self.lin(x)
 
@@ -121,7 +121,7 @@ class GIN(torch.nn.Module):
         x = self.conv3(x, edge_index)
 
         x = global_add_pool(x, batch)
-        x = Fun.dropout(x, p=0.5, training=self.training)
+        x = Fun.dropout(x, p=0.35, training=self.training)
 
         x = self.lin(x)
 

@@ -51,7 +51,7 @@ def eval_gnn(loader, model, loss_fn, device, task_weights=None):
 def train_epochs(epochs, model, train_loader, val_loader, filename, device, optimizer, loss_fn,
                  task_weights=None):
     ensure_folder(f"results/{timestamp}/saved_models")
-    early_stopper = EarlyStopper(patience=3, min_delta=0.05)
+    early_stopper = EarlyStopper(patience=10, min_delta=0.05)
 
     train_losses, val_losses = [], []
     best_val = float('inf')
