@@ -48,7 +48,7 @@ def eval_gnn(loader, model, loss_fn, device, task_weights=None):
     return total_loss / len(loader)
 
 
-def train_epochs(epochs, model, train_loader, val_loader, filename, device, optimizer, loss_fn,
+def train_epochs(epochs, model, train_loader, val_loader, filename, device, optimizer, loss_fn, scheduler,
                  task_weights=None):
     ensure_folder(f"results/{timestamp}/saved_models")
     early_stopper = EarlyStopper(patience=15, min_delta=0.0005)
@@ -63,8 +63,10 @@ def train_epochs(epochs, model, train_loader, val_loader, filename, device, opti
         train_losses.append(train_loss)
         val_losses.append(val_loss)
 
-        print(f"[Epoch {epoch}] train_loss={train_loss:.4f}, val_loss={val_loss:.4f}")
 
+        print(f"[Epoch {epoch}] train_loss={train_loss:.4f}, val_loss={val_loss:.4f}", f"lr={optimizer.param_groups[0]['lr']:.2e}")
+
+        scheduler.step(val_loss)
         if val_loss < best_val:
             save_path = f"results/{timestamp}/saved_models/{filename}"
             best_val = val_loss

@@ -7,7 +7,7 @@ from config import timestamp
 from data_loader.dataloader import load_dataset
 from model import GNNwithMTL, trainer, tester
 from utils.utils import save_loss_to_csv, plot_parity_plot, plot_learning_curve, \
-    save_metrics_to_csv, save_preds_targets_to_csv, plot_metric_comparison
+    save_metrics_to_csv, save_preds_targets_to_csv, plot_metric_comparison, load_r_targets_csv
 
 warnings.filterwarnings("ignore")
 
@@ -37,14 +37,15 @@ def main():
     # 7 - Internal energy at 0K                           17 - Rotational constant
     # 8 - Internal energy at 298.15K                      18 - Rotational constant
     # 9 - Enthalpy at 298.15K
+    #loaded_r_targets = load_r_targets_csv("results/20250910-2321/csv/r_targets/r_targets_[0, 1, 3, 4, 5, 6, 7.csv")
 
     # regression targets (tasks) selected to train the model
-    train_r_targets1 = [0]
-    train_r_targets2 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,18]
+    train_r_targets1 = [2]
+    train_r_targets2 = [0, 1, 3, 4,5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
 
     # regression target (task) selected for model testing
-    test_r_target1 = 0
-    test_r_target2 = 0
+    test_r_target1 = 2
+    test_r_target2 = 2
 
     # merged lists to create the appropriate number of final_linear_layers in the model
     r_targets1 = train_r_targets1 + ([test_r_target1] if test_r_target1 not in train_r_targets1 else [])
@@ -68,22 +69,25 @@ def main():
     train_loader1, val_loader1, test_loader1 = load_dataset(batch_size1, train_ratio1, val_ratio1, test_ratio1,
                                                             train_r_targets1, device, dataset_usage_ratio1,
                                                             21241)
-    train_loader2, val_loader2, test_loader2 = load_dataset(batch_size2, train_ratio2, val_ratio2, test_ratio2,
-                                                            train_r_targets2, device, dataset_usage_ratio2,
-                                                            start_index)
+    train_loader2, val_loader2, test_loader2 = load_dataset(batch_size2, train_ratio2, val_ratio2, test_ratio2,train_r_targets2, device, dataset_usage_ratio2,start_index)
+    #train_loader2, val_loader2, test_loader2 = load_dataset(batch_size2, train_ratio2, val_ratio2, test_ratio2, loaded_r_targets, device, dataset_usage_ratio2, start_index, assign_loaded_targets= True)
+
     print("dataset 1:")
     print(len(train_loader1.dataset), len(val_loader1.dataset), len(test_loader1.dataset))
     print("dataset 2:")
     print(len(train_loader2.dataset), len(val_loader2.dataset), len(test_loader2.dataset))
 
     # you can choose models: gin, gatv2cn, transformercn, gcn
-    model1 = GNNwithMTL.GIN(11, 64, r_targets1).to(device)
-    model2 = GNNwithMTL.GIN(11, 64, r_targets2).to(device)
+    model1 = GNNwithMTL.Gatv2CN(11, 64, r_targets1).to(device)
+    model2 = GNNwithMTL.Gatv2CN(11, 64, r_targets2).to(device)
 
-    optimizer1 = torch.optim.Adam(model1.parameters(), lr=0.0007, weight_decay=0.005)
+    optimizer1 = torch.optim.Adam(model1.parameters(), lr=0.001, weight_decay=0.00005)
     loss_fn1 = torch.nn.MSELoss(reduction='none')
-    optimizer2 = torch.optim.Adam(model2.parameters(), lr=0.0003, weight_decay=0.0001)
+    scheduler1 = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer1, mode='min', factor=0.5, threshold=0.0001, min_lr=0.00005, patience=5, verbose=True)
+    optimizer2 = torch.optim.Adam(model2.parameters(), lr=0.0003, weight_decay=0.0002)
     loss_fn2 = torch.nn.MSELoss(reduction='none')
+    scheduler2 = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer2, mode='min', factor=0.5, threshold=0.0001,
+                                                            min_lr=0.00005, patience=3, verbose=True)
 
     print(f'Dla batch = {batch_size1}')
     start = time.time()
@@ -91,7 +95,7 @@ def main():
                                                           train_loader1,
                                                           val_loader1,
                                                           "GNN1.pt",
-                                                          device, optimizer1, loss_fn1, r_targets_weights1)
+                                                          device, optimizer1, loss_fn1, scheduler1, r_targets_weights1)
     end = time.time()
     print(f"Time = {end - start}")
 
@@ -101,21 +105,23 @@ def main():
                                                           train_loader2,
                                                           val_loader2,
                                                           f"GNN2.pt",
-                                                          device, optimizer2, loss_fn2, r_targets_weights2)
+                                                          device, optimizer2, loss_fn2, scheduler2, r_targets_weights2)
     end = time.time()
     print(f"Time = {end - start}")
 
     trainer.freeze_layers(model2, ['conv'])
 
-    optimizer_ft = torch.optim.Adam(filter(lambda p: p.requires_grad, model2.parameters()), lr=0.0007,
-                                    weight_decay=0.005)
+    optimizer_ft = torch.optim.Adam(filter(lambda p: p.requires_grad, model2.parameters()), lr=0.001,
+                                    weight_decay=0.00003)
+    scheduler_ft = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_ft, mode='min', factor=0.5, threshold=0.0001,
+                                                            min_lr=0.00005, patience=5, verbose=True)
     print(f'Dla batch = {batch_size1}')
     start = time.time()
     gnn_train_loss_ft, gnn_val_loss_ft = trainer.train_epochs(epochs, model2,
                                                               train_loader1,
                                                               val_loader1,
                                                               f"GNN2FT.pt",
-                                                              device, optimizer_ft, loss_fn2,
+                                                              device, optimizer_ft, loss_fn2, scheduler_ft,
                                                               r_targets_weights1)
     end = time.time()
     print(f"Time = {end - start}")
