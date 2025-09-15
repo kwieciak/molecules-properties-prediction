@@ -82,11 +82,11 @@ class Gatv2CN(torch.nn.Module):
         x, edge_index, edge_attr, batch, r_targets = data.x, data.edge_index, data.edge_attr, data.batch, data.r_target
 
         x = self.conv1(x, edge_index, edge_attr=edge_attr).relu()
-        x = self.conv2(x, edge_index, edge_attr=edge_attr).relu()
+        #x = self.conv2(x, edge_index, edge_attr=edge_attr).relu()
         x = self.conv3(x, edge_index, edge_attr=edge_attr)
 
         x = global_mean_pool(x, batch)
-        x = Fun.dropout(x, p=0.3, training=self.training)
+       # x = Fun.dropout(x, p=0.3, training=self.training)
 
         outs = []
         for i, r_target in enumerate(r_targets):
@@ -118,10 +118,10 @@ class GIN(torch.nn.Module):
                 ReLU()
             )
         )
-        self.conv2 = GINConv(make_mlp())
+        #self.conv2 = GINConv(make_mlp())
         self.conv3 = GINConv(make_mlp())
 
-        self.task_heads = ModuleDict({
+        self.task_heads = ModuleDict({ #dodac linear,relu,linear?
             str(i): Linear(hidden_channels, out_channels)
             for i in tasks
         })
@@ -130,11 +130,10 @@ class GIN(torch.nn.Module):
         x, edge_index, batch, r_targets = data.x, data.edge_index, data.batch, data.r_target
 
         x = self.conv1(x, edge_index).relu()
-        x = self.conv2(x, edge_index).relu()
+        #x = self.conv2(x, edge_index).relu()
         x = self.conv3(x, edge_index)
-
-        x = global_add_pool(x, batch)
-        x = Fun.dropout(x, p=0.25, training=self.training)
+        x = global_mean_pool(x, batch) #mean/max
+       # x = Fun.dropout(x, p=0.25, training=self.training)
 
         outs = []
         for i, r_target in enumerate(r_targets):
