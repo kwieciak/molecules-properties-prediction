@@ -9,6 +9,7 @@ def train_gnn(loader, model, loss_fn, optimizer, device, task_weights=None):
     # switching into training mode
     model.train()
     total_loss = 0.0
+    total_n = 0
 
     for batch in loader:
         optimizer.zero_grad()
@@ -23,9 +24,13 @@ def train_gnn(loader, model, loss_fn, optimizer, device, task_weights=None):
 
         loss.backward()
         optimizer.step()
-        total_loss += loss.item()
 
-    return total_loss / len(loader)
+        #total_loss += loss.item()
+
+        total_loss += per_task_loss.sum().item()
+        total_n += per_task_loss.numel()
+
+    return total_loss / total_n
 
 
 @torch.no_grad()
@@ -33,6 +38,7 @@ def eval_gnn(loader, model, loss_fn, device, task_weights=None):
     # switching into eval mode
     model.eval()
     total_loss = 0.0
+    total_n = 0
 
     for batch in loader:
         preds, targets = _prepare_preds_and_targets(batch, model, device)
@@ -42,10 +48,12 @@ def eval_gnn(loader, model, loss_fn, device, task_weights=None):
         # if task_weights is not None:
         # TODO: add implementation of task_weights handling
 
-        loss = per_task_loss.mean()
-        total_loss += loss.item()
+        # loss = per_task_loss.mean()
+        # total_loss += loss.item()
+        total_loss += per_task_loss.sum().item()
+        total_n += per_task_loss.numel()
 
-    return total_loss / len(loader)
+    return total_loss / total_n
 
 
 def train_epochs(epochs, model, train_loader, val_loader, filename, device, optimizer, loss_fn, scheduler,
@@ -75,7 +83,8 @@ def train_epochs(epochs, model, train_loader, val_loader, filename, device, opti
         if early_stopper.check(val_loss, model):
             print("Early stopping")
             break
-    model = early_stopper.load_best(model, device=device)
+    early_stopper.load_best(model, device=device)
+
 
     return train_losses, val_losses
 
