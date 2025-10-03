@@ -14,7 +14,6 @@ class CustomQM9(InMemoryDataset):
         elif assign_loaded_targets:
             self.data, self.slices = self.process_data_assign_loaded_targets(train_r_targets)
 
-
     def process_data_randomly(self, train_r_targets):
         data_list = []
         for data in self.original_data:

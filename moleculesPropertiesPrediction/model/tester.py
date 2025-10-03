@@ -21,12 +21,10 @@ def test_gnn(loader, model, test_task, device, loss_fn):
         preds = model(batch)
         targets = batch.y[:, test_task]
 
-        per_task_loss = loss_fn(preds, targets)
-        # loss = per_task_loss.mean()
-        # total_loss += loss.item()
+        per_batch_loss = loss_fn(preds, targets)
 
-        total_loss += per_task_loss.sum().item()
-        total_n += per_task_loss.numel()
+        total_loss += per_batch_loss.sum().item()
+        total_n += per_batch_loss.numel()
 
         all_preds.append(preds)
         all_targets.append(targets)
@@ -38,6 +36,6 @@ def test_gnn(loader, model, test_task, device, loss_fn):
     mae = mean_absolute_error(all_targets, all_preds)
     r2 = r2_score(all_targets, all_preds)
 
-    print("test_loss=", total_loss/total_n)
+    print("test_loss=", total_loss / total_n)
 
     return {"rmse": rmse, "mae": mae, "r2": r2}, all_preds, all_targets

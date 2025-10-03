@@ -15,20 +15,18 @@ def train_gnn(loader, model, loss_fn, optimizer, device, task_weights=None):
         optimizer.zero_grad()
         preds, targets = _prepare_preds_and_targets(batch, model, device)
 
-        per_task_loss = loss_fn(preds, targets)
+        per_batch_loss = loss_fn(preds, targets)
 
         # if task_weights is not None:
         # TODO: add implementation of task_weights handling
 
-        loss = per_task_loss.mean()
+        loss = per_batch_loss.mean()
 
         loss.backward()
         optimizer.step()
 
-        #total_loss += loss.item()
-
-        total_loss += per_task_loss.sum().item()
-        total_n += per_task_loss.numel()
+        total_loss += per_batch_loss.sum().item()
+        total_n += per_batch_loss.numel()
 
     return total_loss / total_n
 
@@ -43,15 +41,13 @@ def eval_gnn(loader, model, loss_fn, device, task_weights=None):
     for batch in loader:
         preds, targets = _prepare_preds_and_targets(batch, model, device)
 
-        per_task_loss = loss_fn(preds, targets)
+        per_batch_loss = loss_fn(preds, targets)
 
         # if task_weights is not None:
         # TODO: add implementation of task_weights handling
 
-        # loss = per_task_loss.mean()
-        # total_loss += loss.item()
-        total_loss += per_task_loss.sum().item()
-        total_n += per_task_loss.numel()
+        total_loss += per_batch_loss.sum().item()
+        total_n += per_batch_loss.numel()
 
     return total_loss / total_n
 
@@ -71,8 +67,8 @@ def train_epochs(epochs, model, train_loader, val_loader, filename, device, opti
         train_losses.append(train_loss)
         val_losses.append(val_loss)
 
-
-        print(f"[Epoch {epoch}] train_loss={train_loss:.4f}, val_loss={val_loss:.4f}", f"lr={optimizer.param_groups[0]['lr']:.2e}")
+        print(f"[Epoch {epoch}] train_loss={train_loss:.4f}, val_loss={val_loss:.4f}",
+              f"lr={optimizer.param_groups[0]['lr']:.2e}")
 
         scheduler.step(val_loss)
         if val_loss < best_val:
@@ -84,7 +80,6 @@ def train_epochs(epochs, model, train_loader, val_loader, filename, device, opti
             print("Early stopping")
             break
     early_stopper.load_best(model, device=device)
-
 
     return train_losses, val_losses
 

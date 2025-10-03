@@ -1,5 +1,4 @@
 import torch
-from torch.distributed.checkpoint import load_state_dict
 
 
 class EarlyStopper:
@@ -26,4 +25,3 @@ class EarlyStopper:
     def load_best(self, model, device=torch.device('cpu')):
         if self.best_state is not None:
             model.load_state_dict(torch.load(self.path, map_location=device))
-

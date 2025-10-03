@@ -7,8 +7,8 @@ from utils.utils import save_r_targets_to_csv
 
 
 def load_dataset(batch_size, train_ratio, val_ratio, test_ratio, train_r_targets, device, dataset_usage_ratio=1.0,
-                 start_index=0, assign_loaded_targets = False,
-                 shuffling=False, remove_outliers=False, iqr_k=2):
+                 start_index=0, assign_loaded_targets=False, normalization="standard",
+                 shuffling=False, remove_outliers=True, iqr_k=2):
     dataset_path = "./data"
     dataset = CustomQM9(dataset_path, train_r_targets, assign_loaded_targets)
     filename = "r_targets_" + str(train_r_targets)[:20]
@@ -23,17 +23,24 @@ def load_dataset(batch_size, train_ratio, val_ratio, test_ratio, train_r_targets
     # removing outliers
     if remove_outliers:
         mask = calculate_outliers_iqr(dataset, iqr_k)
-        indices = [i for i in indices if mask[i]==True]
-        full_index = [i for i in full_index if mask[i]==True]
+        indices = [i for i in indices if mask[i] == True]
+        full_index = [i for i in full_index if mask[i] == True]
 
     train_index, temp_index = train_test_split(indices, test_size=(1.0 - train_ratio), random_state=42)
     val_index, test_index = train_test_split(temp_index, test_size=test_ratio / (val_ratio + test_ratio),
                                              random_state=42)
 
     # normalizing (standardization) the data
-    data_mean = dataset.data.y[train_index].mean(dim=0, keepdim=True)
-    data_std = dataset.data.y[train_index].std(dim=0, keepdim=True)
-    dataset.data.y = ((dataset.data.y - data_mean) / data_std).to(device)
+    if normalization == "standard":
+        data_mean = dataset.data.y[full_index].mean(dim=0, keepdim=True)
+        data_std = dataset.data.y[full_index].std(dim=0, keepdim=True)
+        dataset.data.y = ((dataset.data.y - data_mean) / data_std).to(device)
+
+    # normalizing (min/max) the data
+    elif normalization == "minmax":
+        data_min, _ = dataset.data.y[full_index].min(dim=0, keepdim=True)
+        data_max, _ = dataset.data.y[full_index].max(dim=0, keepdim=True)
+        dataset.data.y = ((dataset.data.y - data_min) / (data_max - data_min)).to(device)
 
     temp = [dataset[i] for i in train_index if dataset[i].r_target == 2]
 
@@ -44,6 +51,7 @@ def load_dataset(batch_size, train_ratio, val_ratio, test_ratio, train_r_targets
     temp_loader = DataLoader(temp, batch_size=batch_size, shuffle=False)
 
     return train_loader, val_loader, test_loader, temp_loader
+
 
 def calculate_outliers_iqr(dataset, iqr_k):
     y_all = dataset.data.y[:]
@@ -56,6 +64,7 @@ def calculate_outliers_iqr(dataset, iqr_k):
 
     mask = ((y_all >= lower) & (y_all <= upper)).all(dim=1)
     return mask
+
 
 def calculate_outliers_zscore(dataset):
     y_all = dataset.data.y[:]

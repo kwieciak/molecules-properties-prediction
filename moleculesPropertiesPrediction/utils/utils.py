@@ -5,6 +5,7 @@ import pandas as pd
 import psutil
 import torch
 from matplotlib import pyplot as plt
+
 from config import timestamp
 
 
@@ -54,6 +55,7 @@ def save_preds_targets_to_csv(preds, targets, filename):
         for pred, target in zip(preds, targets):
             writer.writerow([pred, target])
 
+
 def save_r_targets_to_csv(r_targets, filename):
     ensure_folder(f"results/{timestamp}/csv/r_targets")
     filename = f"results/{timestamp}/csv/r_targets/{filename}.csv"
@@ -63,6 +65,7 @@ def save_r_targets_to_csv(r_targets, filename):
         writer.writerow(["r_target"])
         for value in r_target_list:
             writer.writerow([value])
+
 
 def load_csv(filepath):
     return pd.read_csv(filepath)
@@ -96,6 +99,7 @@ def load_preds_targets_csv(filepath):
             targets_list.append(float(row['Target']))
     return preds_list, targets_list
 
+
 def load_r_targets_csv(filepath):
     r_targets_list = []
     with open(filepath, mode='r', newline='') as file:
@@ -103,6 +107,7 @@ def load_r_targets_csv(filepath):
         for row in reader:
             r_targets_list.append(int(row['r_target']))
     return r_targets_list
+
 
 def plot_metric_comparison(metrics1, metrics2, metric_name, label1, label2):
     ensure_folder(f"results/{timestamp}/plots/metrics")
