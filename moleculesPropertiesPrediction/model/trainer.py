@@ -9,23 +9,26 @@ def train_gnn(loader, model, loss_fn, optimizer, device, task_weights=None):
     # switching into training mode
     model.train()
     total_loss = 0.0
+    total_n = 0
 
     for batch in loader:
         optimizer.zero_grad()
         preds, targets = _prepare_preds_and_targets(batch, model, device)
 
-        per_task_loss = loss_fn(preds, targets)
+        per_batch_loss = loss_fn(preds, targets)
 
         # if task_weights is not None:
         # TODO: add implementation of task_weights handling
 
-        loss = per_task_loss.mean()
+        loss = per_batch_loss.mean()
 
         loss.backward()
         optimizer.step()
-        total_loss += loss.item()
 
-    return total_loss / len(loader)
+        total_loss += per_batch_loss.sum().item()
+        total_n += per_batch_loss.numel()
+
+    return total_loss / total_n
 
 
 @torch.no_grad()
@@ -33,25 +36,26 @@ def eval_gnn(loader, model, loss_fn, device, task_weights=None):
     # switching into eval mode
     model.eval()
     total_loss = 0.0
+    total_n = 0
 
     for batch in loader:
         preds, targets = _prepare_preds_and_targets(batch, model, device)
 
-        per_task_loss = loss_fn(preds, targets)
+        per_batch_loss = loss_fn(preds, targets)
 
         # if task_weights is not None:
         # TODO: add implementation of task_weights handling
 
-        loss = per_task_loss.mean()
-        total_loss += loss.item()
+        total_loss += per_batch_loss.sum().item()
+        total_n += per_batch_loss.numel()
 
-    return total_loss / len(loader)
+    return total_loss / total_n
 
 
-def train_epochs(epochs, model, train_loader, val_loader, filename, device, optimizer, loss_fn,
+def train_epochs(epochs, model, train_loader, val_loader, filename, device, optimizer, loss_fn, scheduler,
                  task_weights=None):
     ensure_folder(f"results/{timestamp}/saved_models")
-    early_stopper = EarlyStopper(patience=3, min_delta=0.05)
+    early_stopper = EarlyStopper(patience=15, min_delta=0.0005)
 
     train_losses, val_losses = [], []
     best_val = float('inf')
@@ -63,16 +67,19 @@ def train_epochs(epochs, model, train_loader, val_loader, filename, device, opti
         train_losses.append(train_loss)
         val_losses.append(val_loss)
 
-        print(f"[Epoch {epoch}] train_loss={train_loss:.4f}, val_loss={val_loss:.4f}")
+        print(f"[Epoch {epoch}] train_loss={train_loss:.4f}, val_loss={val_loss:.4f}",
+              f"lr={optimizer.param_groups[0]['lr']:.2e}")
 
+        scheduler.step(val_loss)
         if val_loss < best_val:
             save_path = f"results/{timestamp}/saved_models/{filename}"
             best_val = val_loss
             torch.save(model.state_dict(), save_path)
 
-        if early_stopper.early_stop(val_loss):
+        if early_stopper.check(val_loss, model):
             print("Early stopping")
             break
+    early_stopper.load_best(model, device=device)
 
     return train_losses, val_losses
 

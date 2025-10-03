@@ -1,4 +1,4 @@
-FROM rocm/pytorch:latest
+FROM rocm/pytorch:rocm6.4.3_ubuntu24.04_py3.12_pytorch_release_2.3.0
 
 #to avoid interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
