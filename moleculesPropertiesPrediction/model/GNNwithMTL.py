@@ -1,7 +1,36 @@
+from asyncio import tasks
+
 import torch
 import torch.nn.functional as Fun
+from torch import nn
 from torch.nn import Sequential, Linear, ReLU, BatchNorm1d, ModuleDict
 from torch_geometric.nn import GCNConv, TransformerConv, GATv2Conv, GINConv, global_mean_pool
+
+
+class BaseMTLGNN(nn.Module):
+    def __init__(self,tasks_num,embedding_dim, out_dim=1,head_hidden_dim=None,dropout_p=0.0,pooling_fn=global_mean_pool):
+        super().__init__()
+        self.dropout_p = dropout_p
+        self.pooling_fn = pooling_fn
+        self.task_heads = ModuleDict({str(i): (
+            Sequential(Linear(embedding_dim, head_hidden_dim), ReLU(),Linear(head_hidden_dim, out_dim)
+            ) if head_hidden_dim is not None and head_hidden_dim > 1
+            else Linear(head_hidden_dim, out_dim)
+        ) for i in tasks_num})
+
+    def encode(self, data) -> torch.Tensor:
+        raise NotImplementedError
+
+    def forward(self, data):
+        x = self.encode(data)
+        x = Fun.dropout(x, self.dropout_p, training=self.training)
+
+        outs = []
+        for i, r_target in enumerate(data.r_targets):
+            head = self.task_heads[str(int(r_target))]
+            outs.append(head(x[i].unsqueeze(0)))
+
+        return torch.cat(outs, dim=0).squeeze(-1)
 
 
 class GCN(torch.nn.Module):
