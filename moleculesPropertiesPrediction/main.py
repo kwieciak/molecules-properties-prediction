@@ -109,8 +109,8 @@ def main():
     print(len(train_loader2.dataset), len(val_loader2.dataset), len(test_loader2.dataset))
 
     # you can choose models: gin, gatv2cn, transformercn, gcn
-    model1 = GNNwithMTL.GIN(11, 128, r_targets1).to(device)
-    model2 = GNNwithMTL.GIN(11, 128, r_targets2).to(device)
+    model1 = GNNwithMTL.Gatv2CN(11, 128,1, r_targets1).to(device)
+    model2 = GNNwithMTL.Gatv2CN(11, 128,1, r_targets2).to(device)
 
     optimizer1 = torch.optim.Adam(model1.parameters(), lr=0.001, weight_decay=0.00005)
     loss_fn1 = torch.nn.MSELoss(reduction='none')
