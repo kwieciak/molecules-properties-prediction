@@ -15,7 +15,7 @@ def train_nn(loader, model, loss_fn, optimizer, device, task_type, target_attr="
         optimizer.zero_grad()
         preds, targets = _prepare_preds_and_targets(batch, model, device, target_attr)
 
-        per_batch_loss = _compute_loss(loss_fn, preds, targets, task_type)
+        per_batch_loss = compute_loss(loss_fn, preds, targets, task_type)
 
         # if task_weights is not None:
         # TODO: add implementation of task_weights handling
@@ -41,7 +41,7 @@ def eval_nn(loader, model, loss_fn, device, task_type, target_attr="y", task_wei
     for batch in loader:
         preds, targets = _prepare_preds_and_targets(batch, model, device, target_attr)
 
-        per_batch_loss = _compute_loss(loss_fn, preds, targets, task_type)
+        per_batch_loss = compute_loss(loss_fn, preds, targets, task_type)
 
         # if task_weights is not None:
         # TODO: add implementation of task_weights handling
@@ -131,7 +131,7 @@ def _prepare_preds_and_targets(batch, model, device, target_attr):
     return preds, targets
 
 
-def _compute_loss(loss_fn, preds, targets, task_type):
+def compute_loss(loss_fn, preds, targets, task_type):
     if task_type == "regression":
         if preds.dim() == 2 and preds.size(-1) == 1:
             preds = preds.squeeze(-1)

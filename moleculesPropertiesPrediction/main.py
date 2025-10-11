@@ -159,9 +159,9 @@ def main():
     print(f"Time = {end - start}")
 
     # Metrics
-    metrics1, preds1, targets1 = tester.test_gnn(test_loader1, model1, test_r_target1, device, loss_fn1)
+    metrics1, preds1, targets1 = tester.test_gnn(test_loader1, model1, device, loss_fn1, enums.TaskType.REGRESSION,"y" ,test_r_target1)
     print(f"Test without MTL RMSE: {metrics1['rmse']:.4f}, MAE: {metrics1['mae']:.4f}, R2: {metrics1['r2']:.4f}")
-    metrics2, preds2, targets2 = tester.test_gnn(test_loader1, model2, test_r_target2, device, loss_fn2)
+    metrics2, preds2, targets2 = tester.test_gnn(test_loader1, model2, device, loss_fn2, enums.TaskType.REGRESSION,"y" ,test_r_target2)
     print(f"Test with MTL RMSE: {metrics2['rmse']:.4f}, MAE: {metrics2['mae']:.4f}, R2: {metrics2['r2']:.4f}")
     print(timestamp)
 
