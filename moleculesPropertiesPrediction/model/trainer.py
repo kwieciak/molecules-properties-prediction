@@ -5,7 +5,7 @@ from utils.earlystopper import EarlyStopper
 from utils.utils import ensure_folder
 
 
-def train_gnn(loader, model, loss_fn, optimizer, device, task_weights=None):
+def train_nn(loader, model, loss_fn, optimizer, device, task_type, target_attr="y", task_weights=None):
     # switching into training mode
     model.train()
     total_loss = 0.0
@@ -13,9 +13,9 @@ def train_gnn(loader, model, loss_fn, optimizer, device, task_weights=None):
 
     for batch in loader:
         optimizer.zero_grad()
-        preds, targets = _prepare_preds_and_targets(batch, model, device)
+        preds, targets = _prepare_preds_and_targets(batch, model, device, target_attr)
 
-        per_batch_loss = loss_fn(preds, targets)
+        per_batch_loss = _compute_loss(loss_fn, preds, targets, task_type)
 
         # if task_weights is not None:
         # TODO: add implementation of task_weights handling
@@ -32,16 +32,16 @@ def train_gnn(loader, model, loss_fn, optimizer, device, task_weights=None):
 
 
 @torch.no_grad()
-def eval_gnn(loader, model, loss_fn, device, task_weights=None):
+def eval_nn(loader, model, loss_fn, device, task_type, target_attr="y", task_weights=None):
     # switching into eval mode
     model.eval()
     total_loss = 0.0
     total_n = 0
 
     for batch in loader:
-        preds, targets = _prepare_preds_and_targets(batch, model, device)
+        preds, targets = _prepare_preds_and_targets(batch, model, device, target_attr)
 
-        per_batch_loss = loss_fn(preds, targets)
+        per_batch_loss = _compute_loss(loss_fn, preds, targets, task_type)
 
         # if task_weights is not None:
         # TODO: add implementation of task_weights handling
@@ -52,17 +52,17 @@ def eval_gnn(loader, model, loss_fn, device, task_weights=None):
     return total_loss / total_n
 
 
-def train_epochs(epochs, model, train_loader, val_loader, filename, device, optimizer, loss_fn, scheduler,
+def train_epochs(epochs, model, train_loader, val_loader, filename, device, optimizer, loss_fn, scheduler, task_type,
+                 target_attr,
                  task_weights=None):
     ensure_folder(f"results/{timestamp}/saved_models")
-    early_stopper = EarlyStopper(patience=15, min_delta=0.0005)
+    early_stopper = EarlyStopper(patience=15, min_delta=0.0005, path=f"results/{timestamp}/saved_models/{filename}")
 
     train_losses, val_losses = [], []
-    best_val = float('inf')
 
     for epoch in range(1, epochs + 1):
-        train_loss = train_gnn(train_loader, model, loss_fn, optimizer, device)
-        val_loss = eval_gnn(val_loader, model, loss_fn, device)
+        train_loss = train_nn(train_loader, model, loss_fn, optimizer, device, task_type, target_attr)
+        val_loss = eval_nn(val_loader, model, loss_fn, device, task_type, target_attr)
 
         train_losses.append(train_loss)
         val_losses.append(val_loss)
@@ -70,11 +70,10 @@ def train_epochs(epochs, model, train_loader, val_loader, filename, device, opti
         print(f"[Epoch {epoch}] train_loss={train_loss:.4f}, val_loss={val_loss:.4f}",
               f"lr={optimizer.param_groups[0]['lr']:.2e}")
 
-        scheduler.step(val_loss)
-        if val_loss < best_val:
-            save_path = f"results/{timestamp}/saved_models/{filename}"
-            best_val = val_loss
-            torch.save(model.state_dict(), save_path)
+        try:
+            scheduler.step(val_loss)
+        except TypeError:
+            scheduler.step()
 
         if early_stopper.check(val_loss, model):
             print("Early stopping")
@@ -114,15 +113,32 @@ def unfreeze_features(model):
         param.requires_grad = True
 
 
-def _prepare_preds_and_targets(batch, model, device):
+def _prepare_preds_and_targets(batch, model, device, target_attr):
     batch = batch.to(device)
-    batch.x = batch.x.float()
-    batch.y = batch.y.float()
+    y_all = getattr(batch, target_attr)
+    if y_all.dim() == 1:
+        y_all = y_all.unsqueeze(1)
 
     preds = model(batch)
 
-    batch_size = batch.y.shape[0]
-    idx = torch.arange(batch_size, device=batch.y.device)
-    targets = batch.y[idx, batch.r_target]
+    if hasattr(batch, "r_target"):
+        batch_size = y_all.shape[0]
+        idx = torch.arange(batch_size, device=batch.y.device)
+        targets = y_all[idx, getattr(batch, "r_target")]
+    else:
+        targets = y_all
 
     return preds, targets
+
+
+def _compute_loss(loss_fn, preds, targets, task_type):
+    if task_type == "regression":
+        if preds.dim() == 2 and preds.size(-1) == 1:
+            preds = preds.squeeze(-1)
+        return loss_fn(preds, targets)
+    elif task_type in ("binary", "multiclass"):
+        if preds.dim() != 2:
+            raise ValueError(f"Multiclass expects preds of shape [N, C], got {tuple(preds.shape)}")
+        return loss_fn(preds, targets)
+    else:
+        raise ValueError("Unknown task type")

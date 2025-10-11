@@ -68,7 +68,7 @@ def main():
         test_ratio=0.75,
         device=device,
         target_attr="y",
-        dataset_usage_ratio=0.009,
+        dataset_usage_ratio=0.0009,
         start_index=81241,
         normalization=enums.Normalization.STANDARD,
         shuffling=False,
@@ -95,7 +95,7 @@ def main():
         test_ratio=0.3,
         device=device,
         target_attr="y",
-        dataset_usage_ratio=0.03,
+        dataset_usage_ratio=0.003,
         start_index=31241,
         normalization=enums.Normalization.STANDARD,
         shuffling=False,
@@ -109,8 +109,8 @@ def main():
     print(len(train_loader2.dataset), len(val_loader2.dataset), len(test_loader2.dataset))
 
     # you can choose models: gin, gatv2cn, transformercn, gcn
-    model1 = GNNwithMTL.Gatv2CN(11, 128,1, r_targets1).to(device)
-    model2 = GNNwithMTL.Gatv2CN(11, 128,1, r_targets2).to(device)
+    model1 = GNNwithMTL.GIN(11, 128,1, r_targets1).to(device)
+    model2 = GNNwithMTL.GIN(11, 128,1, r_targets2).to(device)
 
     optimizer1 = torch.optim.Adam(model1.parameters(), lr=0.001, weight_decay=0.00005)
     loss_fn1 = torch.nn.MSELoss(reduction='none')
@@ -127,7 +127,7 @@ def main():
                                                           train_loader1,
                                                           val_loader1,
                                                           "GNN1.pt",
-                                                          device, optimizer1, loss_fn1, scheduler1, r_targets_weights1)
+                                                          device, optimizer1, loss_fn1, scheduler1, enums.TaskType.REGRESSION, "y", r_targets_weights1)
     end = time.time()
     print(f"Time = {end - start}")
 
@@ -137,7 +137,7 @@ def main():
                                                           train_loader2,
                                                           val_loader2,
                                                           f"GNN2.pt",
-                                                          device, optimizer2, loss_fn2, scheduler2, r_targets_weights2)
+                                                          device, optimizer2, loss_fn2, scheduler2, enums.TaskType.REGRESSION, "y", r_targets_weights2)
     end = time.time()
     print(f"Time = {end - start}")
 
@@ -153,7 +153,7 @@ def main():
                                                               train_loader1,
                                                               val_loader1,
                                                               f"GNN2FT.pt",
-                                                              device, optimizer_ft, loss_fn2, scheduler_ft,
+                                                              device, optimizer_ft, loss_fn2, scheduler_ft, enums.TaskType.REGRESSION, "y",
                                                               r_targets_weights1)
     end = time.time()
     print(f"Time = {end - start}")
