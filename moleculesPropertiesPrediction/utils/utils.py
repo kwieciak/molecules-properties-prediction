@@ -9,6 +9,43 @@ from matplotlib import pyplot as plt
 from config import timestamp
 
 
+def get_target_attr(dataset, name):
+    if hasattr(dataset.data, name):
+        return getattr(dataset.data, name)
+    if hasattr(dataset, name):
+        return getattr(dataset, name)
+    raise AttributeError(f"Attribute '{name}' not found on dataset or dataset.data.")
+
+
+def ensure_2d_tensor(y_all, dtype=None, device=None):
+    if isinstance(y_all, torch.Tensor):
+        t = y_all.to(device=device, dtype=dtype) if (dtype or device) else y_all
+
+    # list/tuple of tensors -> stack
+    elif isinstance(y_all, (list, tuple)) and y_all and isinstance(y_all[0], torch.Tensor):
+        t = torch.stack(y_all, dim=0).to(device=device, dtype=dtype) if (dtype or device) else torch.stack(y_all, dim=0)
+
+    # list/tuple of numbers -> tensor
+    elif isinstance(y_all, (list, tuple)):
+        t = torch.tensor(y_all, dtype=dtype, device=device) if (dtype or device) else torch.tensor(y_all)
+
+    # NumPy array
+    else:
+        try:
+            import numpy as np
+            if isinstance(y_all, np.ndarray):
+                t = torch.from_numpy(y_all).to(device=device, dtype=dtype) if (dtype or device) else torch.from_numpy(
+                    y_all)
+            else:
+                t = torch.tensor([y_all], dtype=dtype, device=device) if (dtype or device) else torch.tensor([y_all])
+        except Exception:
+            t = torch.tensor([y_all], dtype=dtype, device=device) if (dtype or device) else torch.tensor([y_all])
+
+    if t.dim() == 1:
+        t = t.unsqueeze(1)
+    return t
+
+
 def print_memory_usage():
     ram_memory = psutil.virtual_memory()
     free_ram = ram_memory.available / (1024 ** 3)
