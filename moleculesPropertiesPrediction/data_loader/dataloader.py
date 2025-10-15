@@ -1,11 +1,10 @@
-from typing import Callable, Any, Dict
-
 import torch
 from sklearn.model_selection import train_test_split
-from torch_geometric.loader import DataLoader
+from torch.utils.data import DataLoader, Subset
+from torch_geometric.loader import DataLoader as GraphDataLoader
 
 from enums.enums import Normalization
-from utils.utils import save_r_targets_to_csv
+from utils.utils import save_r_targets_to_csv, get_target_attr, ensure_2d_tensor
 
 
 def load_dataset(
@@ -14,27 +13,25 @@ def load_dataset(
         train_ratio: float,
         val_ratio: float,
         test_ratio: float,
-        device: torch.device | None = None,
+        is_graph: bool,
+        normalization_range: str,
         target_attr: str = "y",
         dataset_usage_ratio: float = 1.0,
         start_index: int = 0,
         normalization: Normalization | None = Normalization.STANDARD,
         shuffling: bool = False,
         remove_outliers: bool = True,
-        iqr_k: int = 2):
-
+        iqr_k: int = 2
+):
     if hasattr(dataset, "r_target"):
         filename = "r_targets_" + str(getattr(dataset, "r_target"))[:20]
         save_r_targets_to_csv(getattr(dataset, "r_target"), filename)
 
     if not hasattr(dataset, "data"):
         raise AttributeError("The dataset must have the ‘data’ attribute.")
-    if not hasattr(dataset.data, target_attr):
-        raise AttributeError(f"The dataset does not have a target attribute '{target_attr}' in dataset.data.")
 
-    y_all = getattr(dataset, target_attr)
-    if y_all.dim() == 1:
-        y_all = y_all.unsqueeze(1)
+    y_all = get_target_attr(dataset, target_attr)
+    y_all = ensure_2d_tensor(y_all)
 
     # splitting the data
     N = len(dataset)
@@ -51,20 +48,26 @@ def load_dataset(
     train_index, temp_index = train_test_split(indices, test_size=(1.0 - train_ratio), random_state=42)
     val_index, test_index = train_test_split(temp_index, test_size=test_ratio / (val_ratio + test_ratio),
                                              random_state=42)
+    if normalization_range == "train":
+        normalisation_index = train_index
+    elif normalization_range == "full":
+        normalisation_index = full_index
+    else:
+        raise Exception("normalization_range must be 'train' or 'full'")
 
     # normalizing (standardization) the data
-    if normalization == "standard":
-        data_mean = y_all[full_index].mean(dim=0, keepdim=True)
-        data_std = y_all[full_index].std(dim=0, keepdim=True)
+    if normalization == Normalization.STANDARD:
+        data_mean = y_all[normalisation_index].mean(dim=0, keepdim=True)
+        data_std = y_all[normalisation_index].std(dim=0, keepdim=True)
         normalized = ((y_all - data_mean) / data_std)
-        setattr(dataset.data, target_attr, normalized.to(device) if device is not None else normalized)
+        setattr(dataset.data, target_attr, normalized)
 
     # normalizing (min/max) the data
-    elif normalization == "minmax":
-        data_min, _ = dataset.data.y[full_index].min(dim=0, keepdim=True)
-        data_max, _ = dataset.data.y[full_index].max(dim=0, keepdim=True)
+    elif normalization == Normalization.MINMAX:
+        data_min, _ = y_all[normalisation_index].min(dim=0, keepdim=True)
+        data_max, _ = y_all[normalisation_index].max(dim=0, keepdim=True)
         normalized = ((y_all - data_min) / (data_max - data_min))
-        setattr(dataset.data, target_attr, normalized.to(device) if device is not None else normalized)
+        setattr(dataset.data, target_attr, normalized)
 
     elif normalization is None:
         pass
@@ -72,9 +75,16 @@ def load_dataset(
         raise ValueError(f"Unknown normalization {normalization}")
 
     # putting datasets into dataloaders
-    train_loader = DataLoader([dataset[i] for i in train_index], batch_size=batch_size, shuffle=shuffling)
-    val_loader = DataLoader([dataset[i] for i in val_index], batch_size=batch_size, shuffle=False)
-    test_loader = DataLoader([dataset[i] for i in test_index], batch_size=batch_size, shuffle=False)
+    if is_graph:
+        train_loader = GraphDataLoader([dataset[i] for i in train_index], batch_size=batch_size, shuffle=shuffling)
+        val_loader = GraphDataLoader([dataset[i] for i in val_index], batch_size=batch_size, shuffle=False)
+        test_loader = GraphDataLoader([dataset[i] for i in test_index], batch_size=batch_size, shuffle=False)
+    elif not is_graph:
+        train_loader = DataLoader(Subset(dataset, train_index), batch_size=batch_size, shuffle=shuffling)
+        val_loader = DataLoader(Subset(dataset, val_index), batch_size=batch_size, shuffle=False)
+        test_loader = DataLoader(Subset(dataset, test_index), batch_size=batch_size, shuffle=False)
+    else:
+        raise NotImplementedError
 
     return train_loader, val_loader, test_loader
 

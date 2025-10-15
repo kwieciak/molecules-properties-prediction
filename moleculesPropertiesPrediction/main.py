@@ -66,7 +66,8 @@ def main():
         train_ratio=0.2,
         val_ratio=0.05,
         test_ratio=0.75,
-        device=device,
+        is_graph=True,
+        normalization_range="full",
         target_attr="y",
         dataset_usage_ratio=0.0009,
         start_index=81241,
@@ -93,7 +94,8 @@ def main():
         train_ratio=0.5,
         val_ratio=0.2,
         test_ratio=0.3,
-        device=device,
+        is_graph=True,
+        normalization_range="full",
         target_attr="y",
         dataset_usage_ratio=0.003,
         start_index=31241,
@@ -102,42 +104,41 @@ def main():
         remove_outliers=True,
         iqr_k=2)
 
-
     print("dataset 1:")
     print(len(train_loader1.dataset), len(val_loader1.dataset), len(test_loader1.dataset))
     print("dataset 2:")
     print(len(train_loader2.dataset), len(val_loader2.dataset), len(test_loader2.dataset))
 
     # you can choose models: gin, gatv2cn, transformercn, gcn
-    model1 = GNNwithMTL.GIN(11, 128,1, r_targets1).to(device)
-    model2 = GNNwithMTL.GIN(11, 128,1, r_targets2).to(device)
+    model1 = GNNwithMTL.GIN(11, 128, 1, r_targets1).to(device)
+    model2 = GNNwithMTL.GIN(11, 128, 1, r_targets2).to(device)
 
     optimizer1 = torch.optim.Adam(model1.parameters(), lr=0.001, weight_decay=0.00005)
     loss_fn1 = torch.nn.MSELoss(reduction='none')
     scheduler1 = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer1, mode='min', factor=0.5, threshold=0.0001,
-                                                            min_lr=0.00005, patience=5, verbose=True)
+                                                            min_lr=0.00005, patience=5)
     optimizer2 = torch.optim.Adam(model2.parameters(), lr=0.0003, weight_decay=0.0002)
     loss_fn2 = torch.nn.MSELoss(reduction='none')
     scheduler2 = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer2, mode='min', factor=0.5, threshold=0.0001,
-                                                            min_lr=0.00005, patience=3, verbose=True)
-
+                                                            min_lr=0.00005, patience=3)
 
     start = time.time()
     gnn_train_loss1, gnn_val_loss1 = trainer.train_epochs(epochs, model1,
                                                           train_loader1,
                                                           val_loader1,
                                                           "GNN1.pt",
-                                                          device, optimizer1, loss_fn1, scheduler1, enums.TaskType.REGRESSION, "y", r_targets_weights1)
+                                                          device, optimizer1, loss_fn1, scheduler1,
+                                                          enums.TaskType.REGRESSION, "y", None, r_targets_weights1)
     end = time.time()
     print(f"Time = {end - start}")
-
 
     start = time.time()
     gnn_train_loss2, gnn_val_loss2 = trainer.train_epochs(epochs, model2,
                                                           train_loader2,
                                                           val_loader2,
                                                           f"GNN2.pt",
-                                                          device, optimizer2, loss_fn2, scheduler2, enums.TaskType.REGRESSION, "y", r_targets_weights2)
+                                                          device, optimizer2, loss_fn2, scheduler2,
+                                                          enums.TaskType.REGRESSION, "y", None, r_targets_weights2)
     end = time.time()
     print(f"Time = {end - start}")
 
@@ -146,22 +147,25 @@ def main():
     optimizer_ft = torch.optim.Adam(filter(lambda p: p.requires_grad, model2.parameters()), lr=0.001,
                                     weight_decay=0.00003)
     scheduler_ft = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_ft, mode='min', factor=0.5, threshold=0.0001,
-                                                              min_lr=0.00005, patience=5, verbose=True)
+                                                              min_lr=0.00005, patience=5)
 
     start = time.time()
     gnn_train_loss_ft, gnn_val_loss_ft = trainer.train_epochs(epochs, model2,
                                                               train_loader1,
                                                               val_loader1,
                                                               f"GNN2FT.pt",
-                                                              device, optimizer_ft, loss_fn2, scheduler_ft, enums.TaskType.REGRESSION, "y",
+                                                              device, optimizer_ft, loss_fn2, scheduler_ft,
+                                                              enums.TaskType.REGRESSION, "y", None,
                                                               r_targets_weights1)
     end = time.time()
     print(f"Time = {end - start}")
 
     # Metrics
-    metrics1, preds1, targets1 = tester.test_gnn(test_loader1, model1, device, loss_fn1, enums.TaskType.REGRESSION,"y" ,test_r_target1)
+    metrics1, preds1, targets1 = tester.test_nn(test_loader1, model1, device, loss_fn1, enums.TaskType.REGRESSION, "y",
+                                                test_r_target1)
     print(f"Test without MTL RMSE: {metrics1['rmse']:.4f}, MAE: {metrics1['mae']:.4f}, R2: {metrics1['r2']:.4f}")
-    metrics2, preds2, targets2 = tester.test_gnn(test_loader1, model2, device, loss_fn2, enums.TaskType.REGRESSION,"y" ,test_r_target2)
+    metrics2, preds2, targets2 = tester.test_nn(test_loader1, model2, device, loss_fn2, enums.TaskType.REGRESSION, "y",
+                                                test_r_target2)
     print(f"Test with MTL RMSE: {metrics2['rmse']:.4f}, MAE: {metrics2['mae']:.4f}, R2: {metrics2['r2']:.4f}")
     print(timestamp)
 

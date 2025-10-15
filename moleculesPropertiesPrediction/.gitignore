@@ -11,6 +11,8 @@ saved_models
 saved_models/
 results
 results/
+datacifar
+datamnist
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

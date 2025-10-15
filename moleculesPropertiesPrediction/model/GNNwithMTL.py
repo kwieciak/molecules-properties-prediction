@@ -36,7 +36,8 @@ class BaseMTLGNN(nn.Module):
 
 class GCN(BaseMTLGNN):
     def __init__(self, in_dim, hidden_dim, out_dim, tasks, head_hidden=None, dropout=None):
-        super().__init__(tasks=tasks, hidden_dim=hidden_dim, out_dim=out_dim, head_hidden_dim=head_hidden, dropout_p=dropout)
+        super().__init__(tasks=tasks, hidden_dim=hidden_dim, out_dim=out_dim, head_hidden_dim=head_hidden,
+                         dropout_p=dropout)
         self.conv1 = GCNConv(in_dim, hidden_dim)
         self.conv2 = GCNConv(hidden_dim, hidden_dim)
         self.conv3 = GCNConv(hidden_dim, hidden_dim)
@@ -53,7 +54,8 @@ class TransformerCN(BaseMTLGNN):
     def __init__(self, in_dim, hidden_dim, out_dim, tasks, heads=4, concat=True, edge_dim=4, head_hidden=None,
                  dropout=None):
         emb_dim = hidden_dim * heads if concat else hidden_dim
-        super().__init__(tasks=tasks, hidden_dim=emb_dim, out_dim=out_dim, head_hidden_dim=head_hidden, dropout_p=dropout)
+        super().__init__(tasks=tasks, hidden_dim=emb_dim, out_dim=out_dim, head_hidden_dim=head_hidden,
+                         dropout_p=dropout)
 
         self.conv1 = TransformerConv(in_dim, hidden_dim, heads=heads, concat=concat, edge_dim=edge_dim)
         c1 = hidden_dim * heads if concat else hidden_dim
@@ -73,7 +75,8 @@ class Gatv2CN(BaseMTLGNN):
     def __init__(self, in_dim, hidden_dim, out_dim, tasks, heads=4, concat=True, edge_dim=4, head_hidden=None,
                  dropout=None):
         emb_dim = hidden_dim * heads if concat else hidden_dim
-        super().__init__(tasks=tasks, hidden_dim=emb_dim, out_dim=out_dim, head_hidden_dim=head_hidden, dropout_p=dropout)
+        super().__init__(tasks=tasks, hidden_dim=emb_dim, out_dim=out_dim, head_hidden_dim=head_hidden,
+                         dropout_p=dropout)
 
         self.conv1 = GATv2Conv(in_dim, hidden_dim, heads=heads, concat=concat, edge_dim=edge_dim)
         c1 = hidden_dim * heads if concat else hidden_dim
@@ -91,7 +94,8 @@ class Gatv2CN(BaseMTLGNN):
 
 class GIN(BaseMTLGNN):
     def __init__(self, in_dim, hidden_dim, out_dim, tasks, head_hidden=None, dropout=None):
-        super().__init__(tasks=tasks, hidden_dim=hidden_dim, out_dim=out_dim, head_hidden_dim=head_hidden, dropout_p=dropout)
+        super().__init__(tasks=tasks, hidden_dim=hidden_dim, out_dim=out_dim, head_hidden_dim=head_hidden,
+                         dropout_p=dropout)
 
         def make_mlp(in_dim_mlp, hidden_dim_mlp):
             return Sequential(
@@ -112,3 +116,4 @@ class GIN(BaseMTLGNN):
         # x = self.conv2(x, edge_index).relu()
         x = self.conv3(x, edge_index)
         return x
+
